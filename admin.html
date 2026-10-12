@@ -254,9 +254,35 @@
       <div style="font-size:2.5rem;margin-bottom:1rem;">&#x1F338;</div>
       <h1>Admin Panel</h1>
       <p>Harshii's Fleurify - Product Management</p>
-      <p class="login-error" id="loginError">Incorrect password. Try again.</p>
-      <input type="password" id="adminPassword" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')adminLogin()">
-      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="adminLogin()">&#x1F512; Login</button>
+      
+<p class="login-error" id="loginError" role="alert"></p>
+
+<input
+  type="email"
+  id="adminEmail"
+  placeholder="Admin email"
+  autocomplete="username"
+  required
+>
+
+<input
+  type="password"
+  id="adminPassword"
+  placeholder="Supabase account password"
+  autocomplete="current-password"
+  onkeydown="if(event.key==='Enter')adminLogin()"
+  required
+>
+
+<button
+  class="btn btn-primary"
+  id="loginButton"
+  style="width:100%;justify-content:center;"
+  onclick="adminLogin()"
+>
+  🔒 Login
+</button>
+
     </div>
   </div>
 
