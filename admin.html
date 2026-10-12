@@ -443,7 +443,7 @@
         }
         const { data, error } = await window.fleurifySupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        if (!data.user) throw new Error('Login user nahi mila.');
+        if (!data.user) throw new Error('User not found.');
 
         // Admin allow-list verification. admin_users must permit authenticated SELECT
         // for the signed-in admin's own user_id; product RLS remains the real protection.
