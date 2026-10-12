@@ -420,36 +420,84 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="products-data.js"></script>
   <script>
-    // ===== ADMIN AUTH =====
-    // CHANGE YOUR ADMIN PASSWORD HERE (line approx. 300)
-    const ADMIN_PASSWORD = 'fleurifyharshiii';
+    // ===== SUPABASE ADMIN AUTH =====
     let selectedBadge = '';
+    let dashboardLoading = false;
 
-    function adminLogin() {
-      const pw = document.getElementById('adminPassword').value;
-      if (pw === ADMIN_PASSWORD) {
-        sessionStorage.setItem('hf_admin', 'true');
+    async function adminLogin() {
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+      const errorBox = document.getElementById('loginError');
+      const loginButton = document.getElementById('loginButton');
+
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'Logging in…';
+      if (loginButton) loginButton.disabled = true;
+
+      try {
+        if (!window.fleurifySupabase) {
+          throw new Error('Supabase client load nahi hua. Page refresh karke try karo.');
+        }
+        const { data, error } = await window.fleurifySupabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (!data.user) throw new Error('Login user nahi mila.');
+
+        // Admin allow-list verification. admin_users must permit authenticated SELECT
+        // for the signed-in admin's own user_id; product RLS remains the real protection.
+        const { data: adminRow, error: adminError } = await window.fleurifySupabase
+          .from('admin_users').select('user_id').eq('user_id', data.user.id).maybeSingle();
+        if (adminError) {
+          await window.fleurifySupabase.auth.signOut();
+          throw new Error('Admin verification failed. admin_users ki SELECT policy check karo. ' + adminError.message);
+        }
+        if (!adminRow) {
+          await window.fleurifySupabase.auth.signOut();
+          throw new Error('Ye account admin_users mein listed nahi hai.');
+        }
+
+        errorBox.textContent = '';
+        errorBox.style.display = 'none';
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
-        loadDashboard();
-      } else {
-        document.getElementById('loginError').style.display = 'block';
+        await loadDashboard();
+      } catch (error) {
+        errorBox.textContent = 'Login failed: ' + (error.message || 'Unknown error');
+        errorBox.style.display = 'block';
+      } finally {
+        if (loginButton) loginButton.disabled = false;
       }
     }
 
-    function adminLogout() {
-      sessionStorage.removeItem('hf_admin');
-      location.reload();
+    async function adminLogout() {
+      try {
+        if (window.fleurifySupabase) await window.fleurifySupabase.auth.signOut();
+      } finally {
+        sessionStorage.removeItem('hf_admin');
+        document.getElementById('adminDashboard').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('adminPassword').value = '';
+      }
     }
 
-    // Auto-login if session
-    if (sessionStorage.getItem('hf_admin') === 'true') {
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('adminDashboard').style.display = 'block';
-      document.addEventListener('DOMContentLoaded', loadDashboard);
-    }
+    // Restore a valid Supabase session; never trust the old password-only session flag.
+    document.addEventListener('DOMContentLoaded', async () => {
+      sessionStorage.removeItem('hf_admin');
+      if (!window.fleurifySupabase) return;
+      const { data: sessionData } = await window.fleurifySupabase.auth.getSession();
+      if (!sessionData.session) return;
+      const { data: adminRow, error } = await window.fleurifySupabase
+        .from('admin_users').select('user_id').eq('user_id', sessionData.session.user.id).maybeSingle();
+      if (!error && adminRow) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        try { await loadDashboard(); } catch (e) { console.error(e); alert('Dashboard load nahi hua: ' + e.message); }
+      } else {
+        await window.fleurifySupabase.auth.signOut();
+      }
+    });
 
     // ===== DASHBOARD =====
     async function loadDashboard() {
