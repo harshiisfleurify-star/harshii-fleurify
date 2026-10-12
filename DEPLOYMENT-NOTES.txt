@@ -1,0 +1,48 @@
+HARSHII'S FLEURIFY — ADMIN PATCH NOTES
+
+Included:
+- Admin category editor for the four home page category cards (image path/URL, emoji, heading, subtitle).
+- Product price validation: whole-number prices from ₹1 to ₹1,00,00,000; original price ₹0 to ₹1,00,00,000.
+- Product table has horizontal scrolling and action buttons retain their width, so very long/invalid prices should not hide Edit/Delete.
+- Admin review inbox; the public review form stores a local copy and continues opening WhatsApp as before.
+- Category settings are read by the main website from localStorage.
+
+IMPORTANT STATIC HOSTING LIMITATION:
+This project is a static HTML/CSS/JS site and currently uses browser localStorage. Changes made in the admin panel are saved only in that browser/device and are NOT automatically shared with customers or other devices. Reviews are likewise visible in the inbox only when submitted in the same browser storage. To make product/category changes and reviews sync globally, connect a real shared database and secure admin authentication (for example Supabase with Row Level Security) before relying on it for a live store.
+
+DEPLOY:
+1. Back up the current Vercel project.
+2. Extract this ZIP.
+3. Upload/push the contents of the UDMAIN folder to the same GitHub repository connected to Vercel, or redeploy the folder using your current Vercel workflow.
+4. Check /admin.html and the main site on a phone.
+5. Test a normal price, then try a very long price; it should reject the save and keep the action buttons visible.
+
+
+SHARED PRODUCT SYNC PATCH
+=========================
+The original issue was that product changes used localStorage, which is isolated per browser/device. A Supabase REST-backed product store has been added. It will NOT sync until you configure a Supabase project and deploy these updated files.
+
+1. Create a project at https://supabase.com/ and open SQL Editor.
+2. Run the SQL below to create the products table and public storefront read access.
+
+create table if not exists public.products (
+  id text primary key,
+  name text not null,
+  description text default '',
+  price numeric not null,
+  original_price numeric default 0,
+  image text default '',
+  category text not null,
+  badge text default '',
+  available boolean default true,
+  created_at bigint not null
+);
+alter table public.products enable row level security;
+create policy "Products are viewable by everyone" on public.products for select using (true);
+
+3. In Supabase Project Settings > API, copy the Project URL and anon/public key.
+4. In products-data.js set PRODUCTS_BACKEND = 'supabase', SUPABASE_URL = 'your project URL', and SUPABASE_ANON_KEY = 'your anon/public key'. Never put a service_role key in frontend code.
+5. IMPORTANT SECURITY: this static admin page currently has a client-side password, which is not secure authentication. Do not create public INSERT/UPDATE/DELETE policies on the products table for a real shop. For safe admin writes, add Supabase Auth and an authenticated admin-only RLS policy/server endpoint before using product edits live. The current patch intentionally does not make the database publicly writable. Until that secure write access is configured, public reads can work but admin edits will be rejected by Supabase.
+6. Deploy the updated project to Vercel, then test on PC and mobile. Both devices must use the same deployed website URL.
+
+This patch only changes product data loading/saving behavior and async loading required for the shared database; it does not redesign the site. Existing browser-local products are not automatically migrated. Before switching, copy any important current products into the Supabase table or export them first.

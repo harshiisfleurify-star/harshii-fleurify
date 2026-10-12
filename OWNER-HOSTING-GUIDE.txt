@@ -1,0 +1,25 @@
+HARSHII FLEURIFY — OWNER ACCOUNT HOSTING GUIDE (VERCEL + GITHUB)
+
+IMPORTANT BEFORE GOING LIVE
+- This ZIP is configured with the Supabase project URL and browser publishable key. The products table has public READ access only.
+- The current admin page still needs secure admin authentication and an admin-only database write policy. Do NOT make the products table publicly writable. Until that is implemented and tested, admin add/edit/delete changes will not sync to Supabase.
+- Back up the current live site and current product data before replacing anything.
+
+HOST UNDER THE OWNER'S ACCOUNTS
+1. Sign in to GitHub using the OWNER'S account: https://github.com/
+2. Create a repository under the owner's account (for example, harshii-fleurify). Set it to Private if preferred.
+3. Extract this ZIP on the computer. Open the folder and locate the actual website folder: Harshii_Fleurify_Admin_Updates/harshifleurify/
+4. Upload/push the CONTENTS of that harshifleurify folder (index.html, admin.html, script.js, products-data.js, style.css, images/, vercel.json, etc.) to the root of the owner's GitHub repository. Do not upload only the outer ZIP folder.
+5. Sign in to Vercel using the OWNER'S account: https://vercel.com/
+6. Choose Add New → Project, import the repository created in step 2, and deploy. For a plain static HTML site, no build command is normally needed; leave the output directory blank unless Vercel asks otherwise.
+7. After deployment, open the Vercel-provided URL and check the home page and /admin.html on both PC and mobile.
+8. Keep the current live project until the new site and data have been checked. Only switch the public domain after testing succeeds.
+
+IF THE REPOSITORY IS ALREADY CONNECTED TO VERCEL
+- Do not create a duplicate project by accident. First check the owner's Vercel dashboard and the GitHub repository linked to the existing project. Back up the repository, then replace its website files with the contents of the harshifleurify folder and commit/push. Vercel should redeploy automatically.
+
+SUPABASE STATUS
+- Project URL configured in products-data.js: https://cfehtdlsranapckfdpig.supabase.co
+- Use only the publishable key in browser code. Never put a secret/service_role key or database password in website files or GitHub.
+- Existing browser-local products are not automatically copied into Supabase. Import/verify product records before switching the live store.
+- Do not consider the site production-ready for admin edits until secure Supabase Auth and admin-only Row Level Security policies are set up and tested.

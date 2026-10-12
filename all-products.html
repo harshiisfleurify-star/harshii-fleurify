@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="All handmade bouquets and gift items from Harshii's Fleurify, Udaipur.">
+  <title>All Products | Harshii's Fleurify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .all-products-page { padding: 9rem 0 5rem; min-height: 100vh; }
+    .all-products-header { text-align:center; margin-bottom:2.5rem; }
+    .all-products-header h1 {
+      font-family:var(--font-heading);
+      font-size:clamp(2rem,5vw,3.2rem);
+      margin-bottom:.75rem;
+    }
+    .all-products-header p { color:var(--color-text-secondary); }
+    .all-products-actions {
+      display:flex; justify-content:center; gap:.75rem; flex-wrap:wrap; margin-top:1.5rem;
+    }
+    .all-products-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:1.5rem;
+    }
+    .all-product-card {
+      background:#fff;
+      border:2px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      overflow:hidden;
+      box-shadow:var(--shadow-sm);
+    }
+    .all-product-image { aspect-ratio:1/1; overflow:hidden; background:var(--color-bg); }
+    .all-product-image img { width:100%; height:100%; object-fit:cover; }
+    .all-product-info { padding:1.25rem; }
+    .all-product-cat {
+      color:var(--color-purple); text-transform:uppercase; font-size:.7rem;
+      font-weight:800; letter-spacing:1px;
+    }
+    .all-product-name {
+      font-family:var(--font-heading); font-size:1.15rem; font-weight:700;
+      margin:.35rem 0 .5rem;
+    }
+    .all-product-desc { color:var(--color-text-muted); font-size:.85rem; line-height:1.6; min-height:4.1em; }
+    .all-product-bottom {
+      display:flex; justify-content:space-between; align-items:center; gap:.75rem;
+      margin-top:1rem; flex-wrap:wrap;
+    }
+    .all-product-price { font-family:var(--font-heading); font-weight:700; font-size:1.25rem; color:var(--color-magenta-dark); }
+    .all-product-buttons { display:flex; gap:.4rem; width:100%; }
+    .all-product-buttons a {
+      flex:1; text-align:center; padding:9px 8px; border-radius:var(--radius-xl);
+      font-size:.72rem; font-weight:800; text-transform:uppercase;
+    }
+    .all-buy { background:var(--grad-pink); color:#fff; }
+    @media(max-width:600px) {
+      .all-products-page { padding:7.5rem 0 3rem; }
+      .all-products-grid { grid-template-columns:1fr; }
+      .all-products-actions .btn { width:100%; justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="all-products-page">
+    <div class="container">
+      <div class="all-products-header">
+        <span class="section-subtitle">Our Complete Collection</span>
+        <h1>All Handmade Products</h1>
+        <p>Choose your favourite bouquet or gift and order directly on WhatsApp.</p>
+        <div class="all-products-actions">
+          <a href="index.html#products" class="btn btn-secondary">← Back to Products</a>
+          <a href="https://wa.me/919509307773?text=Hi!%20I%20want%20to%20order%20from%20Harshiis%20Fleurify" class="btn btn-whatsapp" target="_blank">💬 WhatsApp</a>
+        </div>
+      </div>
+      <div class="all-products-grid" id="allProductsGrid"></div>
+    </div>
+  </main>
+
+  <script src="products-data.js"></script>
+  <script>
+    const grid = document.getElementById('allProductsGrid');
+    (async function loadAllProducts() {
+    let products;
+    try { products = await Promise.resolve(ProductStore.getAvailable()); }
+    catch (error) { console.error(error); grid.innerHTML = '<p style="text-align:center;color:var(--color-text-muted);">Products could not load. Please try again.</p>'; return; }
+    if (!products.length) {
+      grid.innerHTML = '<p style="text-align:center;color:var(--color-text-muted);">No products available right now.</p>';
+    } else {
+      grid.innerHTML = products.map(p => {
+        const cat = CATEGORY_LABELS[p.category] || p.category;
+        const wa = 'https://wa.me/919509307773?text=' +
+          encodeURIComponent('Hi! I want to buy ' + p.name + ' (₹' + p.price + ')');
+        const old = p.original_price > 0
+          ? '<span style="font-size:.78rem;color:var(--color-text-muted);text-decoration:line-through;margin-left:.35rem;">₹' + p.original_price.toLocaleString('en-IN') + '</span>'
+          : '';
+        return '<article class="all-product-card">' +
+          '<div class="all-product-image"><img src="' + p.image + '" alt="' + p.name + '" loading="lazy"></div>' +
+          '<div class="all-product-info">' +
+            '<div class="all-product-cat">' + cat + '</div>' +
+            '<h2 class="all-product-name">' + p.name + '</h2>' +
+            '<p class="all-product-desc">' + p.description + '</p>' +
+            '<div class="all-product-bottom">' +
+              '<div class="all-product-price">₹' + p.price.toLocaleString('en-IN') + old + '</div>' +
+              '<div class="all-product-buttons"><a class="all-buy" href="' + wa + '" target="_blank">Buy on WhatsApp →</a></div>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
+      }).join('');
+    }
+    })();
+  </script>
+</body>
+</html>

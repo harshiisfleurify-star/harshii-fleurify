@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Harshii's Fleurify - Handmade wool flower bouquets and gift items in Udaipur. Beautiful handcrafted crochet flower arrangements delivered all over Udaipur.">
+  <meta name="keywords" content="handmade flowers udaipur, wool bouquet udaipur, crochet flowers, gift items udaipur, harshiis fleurify">
+  <title>Harshii's Fleurify | Handmade Bouquets &amp; Gift Items - Udaipur</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="nav-logo">
+        <img class="nav-logo-image" src="images/logo.png" alt="Harshii’s Fleurify logo">
+        <span class="nav-logo-text">Harshii's <span>Fleurify</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#categories">Categories</a></li>
+        <li><a href="#products">Products</a></li>
+        <li><a href="#why-us">Why Us</a></li>
+        <li><a href="#testimonials">Reviews</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="https://wa.me/919509307773?text=Hi!%20I%20want%20to%20order%20from%20Harshiis%20Fleurify" class="nav-cta" target="_blank">Order Now</a></li>
+      </ul>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="nav-cart" id="cartIcon" onclick="toggleCart()">
+          &#x1F6D2;
+          <span class="cart-count" id="cartCount">0</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CART SIDEBAR -->
+  <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+  <div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h3>&#x1F6D2; Your Cart</h3>
+      <button class="cart-close" onclick="toggleCart()">&#x2715;</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty" id="cartEmpty">
+        <span class="cart-empty-icon">&#x1F6D2;</span>
+        Your cart is empty!<br><small>Add some beautiful handmade bouquets</small>
+      </div>
+    </div>
+    <div class="cart-footer" id="cartFooter" style="display:none;">
+      <div class="cart-total">
+        <span>Total</span>
+        <span id="cartTotal">&#8377;0</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="showCheckout()">
+        &#x1F4E6; Proceed to Buy
+      </button>
+
+      <!-- Checkout Form -->
+      <div class="checkout-form" id="checkoutForm">
+        <h4 style="font-family:var(--font-heading);font-size:1.1rem;color:var(--color-text);margin-top:0.5rem;">Delivery Details</h4>
+        <input type="text" id="custName" placeholder="Your Full Name *" required>
+        <input type="tel" id="custPhone" placeholder="WhatsApp Number *" required>
+        <textarea id="custAddress" placeholder="Full Delivery Address in Udaipur *" rows="2"></textarea>
+
+        <h4 style="font-family:var(--font-heading);font-size:1rem;color:var(--color-text);margin-top:0.3rem;">Payment Method</h4>
+        <div class="payment-options">
+          <div class="payment-option selected" onclick="selectPayment(this, 'Pay on Delivery')">
+            &#x1F4B5;<br>
+            <span class="payment-option-label">Pay on Delivery</span>
+          </div>
+          <div class="payment-option" onclick="selectPayment(this, 'Online UPI')">
+            &#x1F4F1;<br>
+            <span class="payment-option-label">Online UPI</span>
+          </div>
+        </div>
+
+        <button class="btn btn-whatsapp" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="placeOrder()">
+          &#x1F4AC; Place Order via WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO SECTION -->
+  <section class="hero" id="home">
+    <div class="hero-bg">
+      <img src="images/hero.jpg" alt="Harshii's Fleurify - Handmade wool bouquets" loading="eager">
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="floating-petals" id="floatingPetals"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Handmade with Love in Udaipur
+        </div>
+        <p class="hero-script">Bouquets &amp; Gift Items</p>
+        <h1>Beautiful <span class="highlight">Handmade Bouquets</span> Delivered Across Udaipur</h1>
+        <p class="hero-desc">
+          Handcrafted wool flower bouquets and thoughtful gift items &#8212; made with love by Harshii's Fleurify.
+          Each piece is unique, lasting, and made to bring smiles!
+        </p>
+        <div class="hero-actions">
+          <a href="https://wa.me/919509307773?text=Hi!%20I%20want%20to%20order%20from%20Harshiis%20Fleurify" class="btn btn-whatsapp" target="_blank">
+            &#x1F4AC; Order via WhatsApp
+          </a>
+          <a href="#products" class="btn btn-secondary">&#x1F338; Browse Collection</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">100+</span>
+            <span class="stat-label">Happy Customers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">5.0&#9733;</span>
+            <span class="stat-label">Customer Rating</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">&#8377;50</span>
+            <span class="stat-label">Delivery Only</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="categories section-padding" id="categories">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Our Specialties</span>
+        <h2 class="section-title">Browse by Category</h2>
+        <div class="divider"></div>
+        <p class="section-desc">From handmade roses to cute gift combos &#8212; explore our wool flower creations for every occasion.</p>
+      </div>
+      <div class="categories-grid">
+        <div class="category-card reveal" onclick="scrollToProducts('bouquet')">
+          <img src="images/rose-bouquet.jpg" alt="Handmade Bouquets" loading="lazy">
+          <div class="category-overlay">
+            <div class="category-icon">&#x1F490;</div>
+            <h3 class="category-name">Bouquets</h3>
+            <p class="category-count">Handcrafted Designs</p>
+          </div>
+        </div>
+        <div class="category-card reveal" onclick="scrollToProducts('wedding')">
+          <img src="images/wedding.jpg" alt="Special Arrangements" loading="lazy">
+          <div class="category-overlay">
+            <div class="category-icon">&#x1F492;</div>
+            <h3 class="category-name">Special Occasions</h3>
+            <p class="category-count">Custom Packages</p>
+          </div>
+        </div>
+        <div class="category-card reveal" onclick="scrollToProducts('birthday')">
+          <img src="images/birthday.jpg" alt="Birthday Specials" loading="lazy">
+          <div class="category-overlay">
+            <div class="category-icon">&#x1F382;</div>
+            <h3 class="category-name">Birthday Specials</h3>
+            <p class="category-count">Gift Combos</p>
+          </div>
+        </div>
+        <div class="category-card reveal" onclick="scrollToProducts('festival')">
+          <img src="images/festival.jpg" alt="Festival Specials" loading="lazy">
+          <div class="category-overlay">
+            <div class="category-icon">&#x1FA94;</div>
+            <h3 class="category-name">Festival Specials</h3>
+            <p class="category-count">Seasonal Collection</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS (8 on home page) -->
+  <section class="products section-padding" id="products">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Our Collection</span>
+        <h2 class="section-title">Bestselling Creations</h2>
+        <div class="divider"></div>
+        <p class="section-desc">Each piece is handcrafted with love, delivered with care all over Udaipur.</p>
+      </div>
+
+      <div class="products-filter reveal">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="bouquet">Bouquets</button>
+        <button class="filter-btn" data-filter="wedding">Special</button>
+        <button class="filter-btn" data-filter="birthday">Birthday</button>
+        <button class="filter-btn" data-filter="festival">Festival</button>
+      </div>
+
+      <div class="products-grid" id="productsGrid">
+        <!-- Products loaded dynamically from ProductStore -->
+      </div>
+
+      <!-- View More -->
+      <div class="view-more-wrapper reveal">
+        <a href="all-products.html" class="btn btn-secondary">Show More Products &#8594;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="why-us section-padding" id="why-us">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Why Choose Us</span>
+        <h2 class="section-title">Why Choose Harshii's Fleurify</h2>
+        <div class="divider"></div>
+        <p class="section-desc">We don't just deliver flowers &#8212; we deliver emotions, handcrafted with passion and love.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon">&#x1F9F6;</div>
+          <h3 class="feature-title">100% Handmade</h3>
+          <p class="feature-desc">Every flower is handcrafted from premium wool. Unique, lasting, and made with love!</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">&#x1F69A;</div>
+          <h3 class="feature-title">All Over Udaipur</h3>
+          <p class="feature-desc">We deliver all over Udaipur between 3 PM to 6 PM. Just &#8377;50 delivery!</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">&#x1F3A8;</div>
+          <h3 class="feature-title">Custom Designs</h3>
+          <p class="feature-desc">Share your vision, and we'll craft a bespoke bouquet just for you.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">&#x1F49D;</div>
+          <h3 class="feature-title">Lasts Forever</h3>
+          <p class="feature-desc">Unlike real flowers, our handmade wool bouquets last forever!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials section-padding" id="testimonials">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Happy Customers</span>
+        <h2 class="section-title">What Our Customers Say</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="testimonials-wrapper">
+        <div class="testimonial-card reveal">
+          <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <div class="testimonial-quote">&#8220;</div>
+          <p class="testimonial-text">Ordered a beautiful handmade bouquet for my mother's birthday &#8212; it was absolutely stunning! Harshii's Fleurify made her day special!</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">PK</div>
+            <div>
+              <p class="testimonial-name">Priya Khandelwal</p>
+              <p class="testimonial-role">Birthday Gift, Bhupalpura</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <div class="testimonial-quote">&#8220;</div>
+          <p class="testimonial-text">Surprised my wife with a gorgeous handmade rose bouquet. The craftsmanship was amazing. Best part? They last forever!</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">RS</div>
+            <div>
+              <p class="testimonial-name">Rajat Sharma</p>
+              <p class="testimonial-role">Anniversary Gift, Hiran Magri</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <div class="testimonial-quote">&#8220;</div>
+          <p class="testimonial-text">Love the cute gift combos! Ordered a handmade bouquet with chocolates for my friend &#8212; she absolutely loved it!</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">AM</div>
+            <div>
+              <p class="testimonial-name">Anjali Mewar</p>
+              <p class="testimonial-role">Gift Order, Sukhadia Circle</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RATE US / LEAVE A REVIEW -->
+  <section class="rate-us section-padding" id="rate-us">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Rate Us</span>
+        <h2 class="section-title">Leave a Review</h2>
+        <div class="divider"></div>
+        <p class="section-desc">Loved our handmade creations? Share your experience and help others discover us!</p>
+      </div>
+
+      <div class="rating-grid">
+        <!-- Overall Rating Display -->
+        <div class="rating-summary reveal">
+          <div class="rating-big">
+            <span class="rating-big-number">5.0</span>
+            <div class="rating-big-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="rating-big-count">Based on 100+ reviews</p>
+          </div>
+          <div class="rating-bars">
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">5 &#9733;</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:88%"></div></div>
+              <span class="rating-bar-pct">88%</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">4 &#9733;</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:10%"></div></div>
+              <span class="rating-bar-pct">10%</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">3 &#9733;</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:2%"></div></div>
+              <span class="rating-bar-pct">2%</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">2 &#9733;</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+              <span class="rating-bar-pct">0%</span>
+            </div>
+            <div class="rating-bar-row">
+              <span class="rating-bar-label">1 &#9733;</span>
+              <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+              <span class="rating-bar-pct">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Write a Review Form -->
+        <div class="review-form-card reveal">
+          <h3 class="review-form-title">&#9733; Write Your Review</h3>
+          <div class="star-rating-input" id="starRatingInput">
+            <span class="star-input" data-value="1">&#9734;</span>
+            <span class="star-input" data-value="2">&#9734;</span>
+            <span class="star-input" data-value="3">&#9734;</span>
+            <span class="star-input" data-value="4">&#9734;</span>
+            <span class="star-input" data-value="5">&#9734;</span>
+          </div>
+          <p class="star-rating-text" id="starRatingText">Tap to rate</p>
+          <input type="text" id="reviewerName" class="review-input" placeholder="Your Name">
+          <textarea id="reviewText" class="review-input review-textarea" placeholder="Write your review here..." rows="3"></textarea>
+          <button class="btn btn-primary review-submit-btn" onclick="submitReview()">
+            &#x1F4AC; Submit Review via WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DELIVERY BANNER -->
+  <section class="delivery-banner section-padding" id="delivery">
+    <div class="container">
+      <div class="delivery-content reveal">
+        <div class="delivery-text">
+          <h2>&#x1F69A; We Deliver <span class="highlight">All Over Udaipur</span></h2>
+          <p>From Bhupalpura to Hiran Magri, Sukhadia Circle to Chetak Circle &#8212; we deliver beautiful handmade bouquets all over the City of Lakes!</p>
+          <div class="delivery-info">
+            <div class="delivery-info-item"><span class="icon">&#x1F550;</span><span>3 PM &#8211; 6 PM</span></div>
+            <div class="delivery-info-item"><span class="icon">&#x1F69A;</span><span>&#8377;50 Delivery</span></div>
+            <div class="delivery-info-item"><span class="icon">&#x1F4E6;</span><span>3-Day Processing</span></div>
+            <div class="delivery-info-item"><span class="icon">&#x1F193;</span><span>1st Order Free Delivery</span></div>
+          </div>
+          <div style="margin-top:2rem;">
+            <a href="https://wa.me/919509307773?text=Hi!%20I%20want%20to%20order%20from%20Harshiis%20Fleurify" class="btn btn-primary" target="_blank">&#x1F4CD; Order Now</a>
+          </div>
+        </div>
+        <div class="delivery-map">
+          <div class="map-icon">&#x1F4CD;</div>
+          <h3 class="map-title">All Over Udaipur</h3>
+          <p class="map-desc">We deliver handmade bouquets across the entire Udaipur city!</p>
+          <div style="margin-top:1rem;font-size:0.85rem;color:var(--color-text-muted);">
+            Bhupalpura &#8226; Fatehsagar &#8226; Hiran Magri &#8226; Sukhadia &#8226; Chetak &#8226; Ambamata
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact section-padding" id="contact">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Get in Touch</span>
+        <h2 class="section-title">Contact Us</h2>
+        <div class="divider"></div>
+        <p class="section-desc">Have a question or want a custom order? Reach out!</p>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-info reveal">
+          <div class="contact-item">
+            <div class="contact-icon">&#x1F4CD;</div>
+            <div><p class="contact-label">Location</p><p class="contact-value">B-11, Bhupalpura Math,<br>Udaipur, Rajasthan 313001</p></div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">&#x1F4DE;</div>
+            <div><p class="contact-label">Call Us</p><p class="contact-value"><a href="tel:+919509307773">+91 95093 07773</a></p></div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">&#x1F4AC;</div>
+            <div><p class="contact-label">WhatsApp</p><p class="contact-value"><a href="https://wa.me/919509307773" target="_blank">+91 95093 07773</a></p></div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">&#x2709;&#xFE0F;</div>
+            <div><p class="contact-label">Email</p><p class="contact-value"><a href="mailto:Harshiisfleurify21@gmail.com">Harshiisfleurify21@gmail.com</a></p></div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">&#x1F550;</div>
+            <div><p class="contact-label">Working Hours</p><p class="contact-value">Mon-Sun: 10 AM - 9 PM<br>Delivery: 3 PM - 6 PM</p></div>
+          </div>
+        </div>
+        <div class="contact-form-wrapper reveal">
+          <h3 style="font-family:var(--font-heading);font-size:1.3rem;margin-bottom:1.5rem;color:var(--color-magenta-dark);">Send Us a Message</h3>
+          <form class="contact-form" id="contactForm" onsubmit="handleFormSubmit(event)">
+            <div class="form-row">
+              <div class="form-group"><label for="name">Your Name</label><input type="text" id="name" name="name" placeholder="Enter your name" required></div>
+              <div class="form-group"><label for="phone">Phone</label><input type="tel" id="phone" name="phone" placeholder="+91 XXXXX XXXXX" required></div>
+            </div>
+            <div class="form-group"><label for="occasion">Occasion</label>
+              <select id="occasion" name="occasion">
+                <option value="">Select an occasion</option>
+                <option value="birthday">Birthday</option>
+                <option value="anniversary">Anniversary</option>
+                <option value="wedding">Wedding / Engagement</option>
+                <option value="festival">Festival / Pooja</option>
+                <option value="love">Romantic / Love</option>
+                <option value="custom">Custom Gift</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group"><label for="message">Message</label><textarea id="message" name="message" placeholder="Tell us about your requirements..." rows="4"></textarea></div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">&#x1F490; Send via WhatsApp</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="nav-logo">
+            <img class="nav-logo-image" src="images/logo.png" alt="Harshii’s Fleurify logo">
+            <span class="nav-logo-text">Harshii's <span>Fleurify</span></span>
+          </a>
+          <p>Beautiful handmade wool bouquets and gift items crafted with love in Udaipur. Follow us @harshiisfleurify21</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/harshiisfleurify21" class="social-icon" aria-label="Instagram" target="_blank">&#x1F4F7;</a>
+            <a href="https://youtube.com/@harshiisfleurify" class="social-icon" aria-label="YouTube" target="_blank">&#x25B6;&#xFE0F;</a>
+            <a href="https://wa.me/919509307773" class="social-icon" aria-label="WhatsApp" target="_blank">&#x1F4AC;</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer-heading">Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="#home">Home</a></li><li><a href="#categories">Categories</a></li>
+            <li><a href="#products">Products</a></li><li><a href="#why-us">Why Us</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-heading">Categories</h4>
+          <ul class="footer-links">
+            <li><a href="#products">Rose Bouquets</a></li><li><a href="#products">Birthday Bouquets</a></li>
+            <li><a href="#products">Gift Items</a></li><li><a href="#products">Festival Specials</a></li>
+            <li><a href="#products">Custom Bouquets</a></li>
+          </ul>
+        </div>
+        <div class="footer-newsletter">
+          <h4 class="footer-heading">Stay Updated</h4>
+          <p>Follow us for new designs, seasonal specials, and festive discounts!</p>
+          <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+            <input type="email" placeholder="Your email" required>
+            <button type="submit" aria-label="Subscribe">&#8594;</button>
+          </form>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&#169; 2026 Harshii's Fleurify, Udaipur. Made with &#x1F338; by <span style="color:var(--color-magenta);font-weight:700;">Neeteen</span></p>
+        <div class="footer-bottom-links"><a href="#">Privacy Policy</a><a href="#">Terms</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- WHATSAPP FLOAT -->
+  <div class="whatsapp-float" id="whatsappFloat">
+    <a href="https://wa.me/919509307773?text=Hi!%20I%20want%20to%20order%20from%20Harshiis%20Fleurify" target="_blank">
+      <span class="wa-icon">&#x1F4AC;</span><span>WhatsApp Order</span>
+    </a>
+  </div>
+
+  <!-- SCROLL TOP -->
+  <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">&#8593;</button>
+
+  <script src="products-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
