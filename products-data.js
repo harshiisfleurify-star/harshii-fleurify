@@ -1,5 +1,8 @@
+```javascript
 // ===== PRODUCT DATA LAYER =====
-// Products can use browser-local storage or a shared Supabase database.
+// Harshii's Fleurify
+// Shared Supabase database + authenticated admin requests.
+// Never put a service_role/secret key in frontend code.
 
 // ===== CATEGORY MAP =====
 const CATEGORY_LABELS = {
@@ -9,7 +12,7 @@ const CATEGORY_LABELS = {
   festival: 'Festival'
 };
 
-// ===== DEFAULT PRODUCTS (seeded on first load) =====
+// ===== DEFAULT PRODUCTS =====
 const DEFAULT_PRODUCTS = [
   {
     id: 'prod_1',
@@ -109,87 +112,443 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
-// ===== SHARED DATABASE CONFIGURATION =====
-// Set these two values after creating a Supabase project. Never use a service_role key here.
-const PRODUCTS_BACKEND = 'supabase'; // Shared Supabase database enabled.
+// ===== SUPABASE CONFIGURATION =====
+const PRODUCTS_BACKEND = 'supabase';
 const SUPABASE_URL = 'https://cfehtdlsranapckfdpig.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_wJwYnSbJdODrkEqXqwr2fA_NhVnhDcB';
 const PRODUCTS_KEY = 'fleurify_products';
 
+// Supabase Auth browser storage key for this project.
+const SUPABASE_AUTH_STORAGE_KEY =
+  'sb-cfehtdlsranapckfdpig-auth-token';
+
+// ===== LOCAL STORAGE HELPERS =====
 function _lsGetProducts() {
   const data = localStorage.getItem(PRODUCTS_KEY);
+
   if (!data) {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(DEFAULT_PRODUCTS));
+    return DEFAULT_PRODUCTS.map(p => ({ ...p }));
+  }
+
+  try {
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : DEFAULT_PRODUCTS;
+  } catch (_) {
     return DEFAULT_PRODUCTS;
   }
-  try { return JSON.parse(data); } catch (_) { return DEFAULT_PRODUCTS; }
 }
+
 function _lsSaveProducts(products) {
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
 }
+
 function _supabaseReady() {
-  return PRODUCTS_BACKEND === 'supabase' && SUPABASE_URL && SUPABASE_ANON_KEY;
+  return (
+    PRODUCTS_BACKEND === 'supabase' &&
+    Boolean(SUPABASE_URL) &&
+    Boolean(SUPABASE_ANON_KEY)
+  );
 }
-async function _sbRequest(path, options = {}) {
-  if (!_supabaseReady()) throw new Error('Shared database is not configured. Add the Supabase URL and anon key in products-data.js.');
-  const response = await fetch(SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/' + path, {
-    ...options,
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
+
+// ===== AUTH SESSION HELPERS =====
+function _readStoredSession() {
+  try {
+    const raw = localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+
+    // Supabase JS normally stores { access_token, refresh_token, ... }.
+    if (parsed && parsed.access_token) return parsed;
+    if (parsed && parsed.currentSession) return parsed.currentSession;
+
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function _saveStoredSession(session) {
+  if (!session || !session.access_token) {
+    throw new Error('Supabase ne valid login session return nahi kiya.');
+  }
+
+  localStorage.setItem(
+    SUPABASE_AUTH_STORAGE_KEY,
+    JSON.stringify(session)
+  );
+}
+
+function _clearStoredSession() {
+  localStorage.removeItem(SUPABASE_AUTH_STORAGE_KEY);
+}
+
+async function _refreshSessionIfNeeded() {
+  let session = _readStoredSession();
+
+  if (!session) return null;
+
+  // Refresh if the token is expired or will expire within 30 seconds.
+  const expiresAt = Number(session.expires_at || 0);
+  const shouldRefresh =
+    expiresAt > 0 && expiresAt * 1000 < Date.now() + 30000;
+
+  if (!shouldRefresh) return session;
+
+  if (!session.refresh_token) {
+    _clearStoredSession();
+    return null;
+  }
+
+  const response = await fetch(
+    SUPABASE_URL.replace(/\/$/, '') +
+      '/auth/v1/token?grant_type=refresh_token',
+    {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        refresh_token: session.refresh_token
+      })
     }
-  });
+  );
+
+  if (!response.ok) {
+    _clearStoredSession();
+    return null;
+  }
+
+  const refreshed = await response.json();
+
+  if (!refreshed.access_token) {
+    _clearStoredSession();
+    return null;
+  }
+
+  if (!refreshed.expires_at && refreshed.expires_in) {
+    refreshed.expires_at =
+      Math.floor(Date.now() / 1000) + refreshed.expires_in;
+  }
+
+  _saveStoredSession(refreshed);
+  return refreshed;
+}
+
+// ===== SUPABASE AUTH API =====
+// Call ProductStore.signIn(email, password) from the admin login form.
+// This creates a real Supabase Auth session; a typed user ID is not needed.
+async function _signIn(email, password) {
+  if (!email || !password) {
+    throw new Error('Email aur password dono enter karo.');
+  }
+
+  const response = await fetch(
+    SUPABASE_URL.replace(/\/$/, '') +
+      '/auth/v1/token?grant_type=password',
+    {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password
+      })
+    }
+  );
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || !result.access_token) {
+    throw new Error(
+      result.msg ||
+      result.message ||
+      result.error_description ||
+      result.error ||
+      'Login failed. Email/password check karo.'
+    );
+  }
+
+  if (!result.expires_at && result.expires_in) {
+    result.expires_at =
+      Math.floor(Date.now() / 1000) + result.expires_in;
+  }
+
+  _saveStoredSession(result);
+
+  // Check that the signed-in account is listed in admin_users.
+  const userId = result.user && result.user.id;
+
+  if (!userId) {
+    _clearStoredSession();
+    throw new Error('Login user ID nahi mila.');
+  }
+
+  try {
+    const admins = await _sbRequest(
+      'admin_users?select=user_id&user_id=eq.' +
+        encodeURIComponent(userId),
+      { method: 'GET' }
+    );
+
+    if (!Array.isArray(admins) || admins.length === 0) {
+      _clearStoredSession();
+      throw new Error(
+        'Is account ko admin access nahi hai. Admin user ID database mein verify karo.'
+      );
+    }
+  } catch (error) {
+    _clearStoredSession();
+    throw error;
+  }
+
+  return result.user;
+}
+
+async function _signOut() {
+  const session = _readStoredSession();
+
+  try {
+    if (session && session.access_token) {
+      await fetch(
+        SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/logout',
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + session.access_token
+          }
+        }
+      );
+    }
+  } finally {
+    _clearStoredSession();
+  }
+}
+
+// ===== SHARED SUPABASE REQUEST =====
+async function _sbRequest(path, options = {}) {
+  if (!_supabaseReady()) {
+    throw new Error('Supabase URL/key configure nahi hain.');
+  }
+
+  const session = await _refreshSessionIfNeeded();
+
+  // Public SELECT can use the publishable key. Protected operations
+  // must use a genuine signed-in user's access token.
+  const method = String(options.method || 'GET').toUpperCase();
+  const isWrite = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method);
+
+  if (isWrite && !session?.access_token) {
+    throw new Error(
+      'Admin Supabase session missing hai. Logout karke email/password se dobara login karo.'
+    );
+  }
+
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: 'Bearer ' +
+      (session?.access_token || SUPABASE_ANON_KEY),
+    ...(options.body !== undefined
+      ? { 'Content-Type': 'application/json' }
+      : {}),
+    ...(options.headers || {})
+  };
+
+  const response = await fetch(
+    SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/' + path,
+    {
+      ...options,
+      headers
+    }
+  );
+
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error('Database request failed (' + response.status + '): ' + detail);
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        'Supabase access denied (' + response.status + '): ' + detail
+      );
+    }
+
+    throw new Error(
+      'Database request failed (' + response.status + '): ' + detail
+    );
   }
+
   if (response.status === 204) return null;
+
   const text = await response.text();
   return text ? JSON.parse(text) : null;
 }
+
+// ===== SUPABASE PRODUCT HELPERS =====
 async function _sbGetProducts() {
-  return await _sbRequest('products?select=*&order=created_at.desc');
+  return _sbRequest(
+    'products?select=*&order=created_at.desc'
+  );
 }
 
-// PUBLIC PRODUCT API. Supabase mode is shared across all devices; local mode is browser-only.
+// ===== PUBLIC PRODUCT API =====
 const ProductStore = {
+  // Authentication helpers for admin.html.
+  signIn: function(email, password) {
+    return _signIn(email, password);
+  },
+
+  signOut: function() {
+    return _signOut();
+  },
+
+  getCurrentUser: async function() {
+    const session = await _refreshSessionIfNeeded();
+    if (!session || !session.access_token) return null;
+
+    const response = await fetch(
+      SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/user',
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + session.access_token
+        }
+      }
+    );
+
+    if (!response.ok) return null;
+    return response.json();
+  },
+
+  isAdmin: async function() {
+    const user = await this.getCurrentUser();
+    if (!user || !user.id) return false;
+
+    try {
+      const rows = await _sbRequest(
+        'admin_users?select=user_id&user_id=eq.' +
+          encodeURIComponent(user.id)
+      );
+      return Array.isArray(rows) && rows.length > 0;
+    } catch (_) {
+      return false;
+    }
+  },
+
   getAll: function() {
     if (_supabaseReady()) return _sbGetProducts();
     return _lsGetProducts();
   },
+
   getById: function(id) {
-    if (_supabaseReady()) return _sbRequest('products?id=eq.' + encodeURIComponent(id) + '&select=*&limit=1').then(rows => rows[0] || null);
+    if (_supabaseReady()) {
+      return _sbRequest(
+        'products?id=eq.' + encodeURIComponent(id) + '&select=*&limit=1'
+      ).then(rows => rows[0] || null);
+    }
+
     return _lsGetProducts().find(p => p.id === id) || null;
   },
-  add: function(product) {
-    const item = { ...product, id: 'prod_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), created_at: Date.now() };
-    if (_supabaseReady()) return _sbRequest('products', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }).then(rows => rows[0] || item);
-    const products = _lsGetProducts(); products.push(item); _lsSaveProducts(products); return item;
+
+  add: async function(product) {
+    const item = {
+      ...product,
+      id: 'prod_' + Date.now() + '_' +
+        Math.random().toString(36).slice(2, 7),
+      created_at: new Date().toISOString()
+    };
+
+    if (_supabaseReady()) {
+      const rows = await _sbRequest('products', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(item)
+      });
+
+      return rows && rows[0] ? rows[0] : item;
+    }
+
+    const products = _lsGetProducts();
+    products.push(item);
+    _lsSaveProducts(products);
+    return item;
   },
-  update: function(id, updates) {
-    if (_supabaseReady()) return _sbRequest('products?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(updates) }).then(rows => rows[0] || null);
-    const products = _lsGetProducts(); const idx = products.findIndex(p => p.id === id);
+
+  update: async function(id, updates) {
+    if (_supabaseReady()) {
+      const rows = await _sbRequest(
+        'products?id=eq.' + encodeURIComponent(id),
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify(updates)
+        }
+      );
+
+      return rows && rows[0] ? rows[0] : null;
+    }
+
+    const products = _lsGetProducts();
+    const idx = products.findIndex(p => p.id === id);
     if (idx === -1) return null;
-    products[idx] = { ...products[idx], ...updates }; _lsSaveProducts(products); return products[idx];
+
+    products[idx] = { ...products[idx], ...updates };
+    _lsSaveProducts(products);
+    return products[idx];
   },
-  delete: function(id) {
-    if (_supabaseReady()) return _sbRequest('products?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+
+  delete: async function(id) {
+    if (_supabaseReady()) {
+      return _sbRequest(
+        'products?id=eq.' + encodeURIComponent(id),
+        { method: 'DELETE' }
+      );
+    }
+
     _lsSaveProducts(_lsGetProducts().filter(p => p.id !== id));
   },
+
   getByCategory: function(category) {
-    const get = this.getAll();
-    const filter = products => category === 'all' ? products.filter(p => p.available) : products.filter(p => p.category === category && p.available);
-    return get && typeof get.then === 'function' ? get.then(filter) : filter(get);
+    const result = this.getAll();
+
+    const filter = products =>
+      category === 'all'
+        ? products.filter(p => p.available)
+        : products.filter(
+            p => p.category === category && p.available
+          );
+
+    return result && typeof result.then === 'function'
+      ? result.then(filter)
+      : filter(result);
   },
+
   getAvailable: function() {
-    const get = this.getAll();
+    const result = this.getAll();
     const filter = products => products.filter(p => p.available);
-    return get && typeof get.then === 'function' ? get.then(filter) : filter(get);
+
+    return result && typeof result.then === 'function'
+      ? result.then(filter)
+      : filter(result);
   },
-  resetToDefaults: function() {
-    if (_supabaseReady()) return _sbRequest('products?id=not.is.null', { method: 'DELETE' }).then(() => _sbRequest('products', { method: 'POST', body: JSON.stringify(DEFAULT_PRODUCTS), headers: { Prefer: 'return=minimal' } }));
+
+  resetToDefaults: async function() {
+    if (_supabaseReady()) {
+      await _sbRequest('products?id=not.is.null', {
+        method: 'DELETE'
+      });
+
+      return _sbRequest('products', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify(DEFAULT_PRODUCTS)
+      });
+    }
+
     _lsSaveProducts(DEFAULT_PRODUCTS);
   }
 };
+```
