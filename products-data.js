@@ -22,7 +22,7 @@
       price: 999, original_price: 1499,
       image: 'images/rose-bouquet.jpg',
       category: 'bouquet', badge: 'Bestseller',
-      available: true, created_at: Date.now()
+      available: true, created_at: new Date().toISOString()
     },
     {
       id: 'prod_2',
@@ -149,7 +149,7 @@
       ...product,
       id: 'prod_' + Date.now() + '_' +
         Math.random().toString(36).slice(2, 7),
-      created_at: new Date().toISOString()
+      created_at: Date.now()
     };
 
     const { data, error } = await db
