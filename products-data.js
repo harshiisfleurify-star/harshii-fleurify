@@ -22,7 +22,7 @@
       price: 999, original_price: 1499,
       image: 'images/rose-bouquet.jpg',
       category: 'bouquet', badge: 'Bestseller',
-      available: true, created_at: new Date().toISOString()
+      available: true, created_at: Date.now()
     },
     {
       id: 'prod_2',
