@@ -41,6 +41,22 @@
     </div>
   </nav>
 
+  <!-- Product preview modal (opens when a customer taps a product image/name) -->
+  <div class="product-preview-modal" id="productPreviewModal" aria-hidden="true">
+    <div class="product-preview-backdrop" data-preview-close></div>
+    <div class="product-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="productPreviewTitle">
+      <button type="button" class="product-preview-close" aria-label="Close product preview" data-preview-close>&times;</button>
+      <img id="productPreviewImage" src="" alt="">
+      <div class="product-preview-details">
+        <p id="productPreviewCategory" class="product-category-tag"></p>
+        <h3 id="productPreviewTitle"></h3>
+        <p id="productPreviewDescription"></p>
+        <strong id="productPreviewPrice"></strong>
+        <button type="button" class="btn btn-primary" id="productPreviewAdd">+ Add to Cart</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CART SIDEBAR -->
   <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
   <div class="cart-sidebar" id="cartSidebar">
@@ -84,7 +100,8 @@
 
         <div id="upiPaymentPanel" class="upi-payment-panel" hidden>
           <h4>Pay with UPI</h4>
-          <p>Scan this QR code using Google Pay, PhonePe or Paytm. Pay the total shown above, then enter your UPI transaction reference (UTR) below.</p>
+          <p>Pay the exact order total using the QR code or your UPI app. After payment, enter the UTR below. The site cannot verify a bank payment from a QR/UTR alone; the owner must verify it unless a payment gateway is connected.</p>
+          <a href="#" id="openUpiApp" class="btn btn-secondary upi-app-button" hidden>Open UPI app</a>
           <img src="images/payment-qr.jpg" alt="Harshii's Fleurify UPI payment QR code" class="upi-payment-qr">
           <label for="upiReference">UPI transaction reference / UTR</label>
           <input type="text" id="upiReference" placeholder="Enter UTR after payment">
@@ -92,7 +109,7 @@
         </div>
 
         <button class="btn btn-whatsapp" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="placeOrder()">
-          &#x1F4AC; Place Order via WhatsApp
+          &#x2705; Confirm Order &amp; Send via WhatsApp
         </button>
       </div>
     </div>
