@@ -1309,3 +1309,83 @@ button, .btn, .product-order-btn, .product-cart-btn { touch-action: manipulation
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
 }
+
+
+/* ===== Small, targeted fixes: mobile navigation, cart footer and UPI checkout ===== */
+.hero-badge { display: none !important; }
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  max-width: 100%;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+.nav-links li:last-child { min-width: 0; }
+@media (max-width: 768px) {
+  .nav-links li:last-child { width: 100%; }
+  .nav-links li:last-child .nav-cta {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.8rem 1rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+  .cart-sidebar {
+    width: min(100%, 460px) !important;
+    max-width: 100vw;
+    right: 0;
+  }
+  .cart-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: #fff;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .cart-sidebar.open {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    height: 100vh;
+  }
+  .cart-items {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .cart-footer .btn,
+  .cart-footer button {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+.upi-payment-panel {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #f3c7df;
+  border-radius: 16px;
+  background: #fff8fc;
+  text-align: center;
+}
+.upi-payment-panel[hidden] { display: none !important; }
+.upi-payment-panel h4 { margin: 0 0 0.5rem; color: #302333; }
+.upi-payment-panel p,
+.upi-payment-panel small { display: block; color: #746575; font-size: 0.85rem; line-height: 1.5; }
+.upi-payment-qr {
+  display: block;
+  width: min(100%, 280px);
+  height: auto;
+  object-fit: contain;
+  margin: 0.75rem auto;
+  border-radius: 10px;
+  background: #fff;
+}
+.upi-payment-panel label { display:block; text-align:left; font-size:0.85rem; font-weight:700; margin-top:0.75rem; }
+.upi-payment-panel input { width:100%; box-sizing:border-box; }
