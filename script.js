@@ -1,6 +1,7 @@
 // ===== HARSHII'S FLEURIFY - MAIN JS =====
 let cart = JSON.parse(localStorage.getItem('hf_cart') || '[]');
 let selectedPayment = 'Pay on Delivery';
+let selectedPaymentScreenshot = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
@@ -13,52 +14,56 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
 });
 
-// Payment screenshot preview (works on touch and desktop devices).
+// Payment screenshot picker: separate camera and gallery/file options.
 document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('paymentScreenshot');
-  if (input) input.addEventListener('change', previewPaymentScreenshot);
+  ['paymentScreenshotCamera', 'paymentScreenshotGallery'].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.addEventListener('change', previewPaymentScreenshot);
+  });
 });
 
-function previewPaymentScreenshot() {
-  const input = document.getElementById('paymentScreenshot');
+function previewPaymentScreenshot(event) {
+  const input = event && event.target;
   const file = input && input.files && input.files[0];
   const wrap = document.getElementById('paymentScreenshotPreviewWrap');
   const img = document.getElementById('paymentScreenshotPreview');
   const help = document.getElementById('paymentShareHelp');
-  if (!file) {
-    if (wrap) wrap.hidden = true;
-    if (img) img.removeAttribute('src');
-    return;
-  }
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(file.type)) {
     input.value = '';
-    alert('Please upload a JPG, PNG or WebP screenshot.');
-    if (wrap) wrap.hidden = true;
+    alert('Please choose a JPG, PNG or WebP image.');
     return;
   }
   if (file.size > 8 * 1024 * 1024) {
     input.value = '';
-    alert('Screenshot must be smaller than 8 MB.');
-    if (wrap) wrap.hidden = true;
+    alert('Image must be smaller than 8 MB.');
     return;
   }
+  // Keep one chosen file regardless of whether it came from camera or gallery.
+  selectedPaymentScreenshot = file;
+  ['paymentScreenshotCamera', 'paymentScreenshotGallery'].forEach((id) => {
+    const other = document.getElementById(id);
+    if (other && other !== input) other.value = '';
+  });
   const reader = new FileReader();
   reader.onload = () => { if (img) img.src = reader.result; if (wrap) wrap.hidden = false; };
   reader.readAsDataURL(file);
-  if (help) help.textContent = 'Screenshot attached: ' + file.name;
+  if (help) help.textContent = 'Image attached: ' + file.name;
 }
 
 function clearPaymentScreenshot() {
-  const input = document.getElementById('paymentScreenshot');
+  ['paymentScreenshotCamera', 'paymentScreenshotGallery'].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.value = '';
+  });
+  selectedPaymentScreenshot = null;
   const wrap = document.getElementById('paymentScreenshotPreviewWrap');
   const img = document.getElementById('paymentScreenshotPreview');
   const help = document.getElementById('paymentShareHelp');
-  if (input) input.value = '';
   if (img) img.removeAttribute('src');
   if (wrap) wrap.hidden = true;
   if (help) help.textContent = '';
 }
-
 
 // ===== NAVBAR =====
 function initNavbar() {
@@ -497,10 +502,10 @@ async function placeOrder() {
 
   let paymentScreenshot = null;
   if (selectedPayment === 'Online UPI') {
-    paymentScreenshot = document.getElementById('paymentScreenshot')?.files?.[0] || null;
+    paymentScreenshot = selectedPaymentScreenshot;
     if (!paymentScreenshot) {
       alert('Please attach a screenshot of your successful payment before confirming the order.');
-      document.getElementById('paymentScreenshot')?.focus();
+      document.querySelector('.payment-source-button')?.focus();
       return;
     }
   }
