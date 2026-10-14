@@ -1479,3 +1479,18 @@ body.preview-open { overflow:hidden; }
   .product-preview-details h3 { font-size:1.25rem; padding-right:36px; }
   #checkoutForm > .btn-whatsapp { bottom: .25rem; }
 }
+
+
+/* Payment screenshot upload: responsive on phones, tablets and desktop. */
+.payment-upload-label { display:block; text-align:left; font-size:.9rem; font-weight:700; margin-top:.9rem; color:var(--color-text, #302333); }
+#paymentScreenshot { display:block; width:100%; max-width:100%; box-sizing:border-box; margin-top:.45rem; padding:.65rem; border:1px dashed #d7a7c1; border-radius:12px; background:#fff; font-size:.88rem; }
+.payment-screenshot-preview-wrap { margin:.75rem auto; max-width:360px; }
+.payment-screenshot-preview-wrap[hidden] { display:none !important; }
+.payment-screenshot-preview { display:block; width:100%; max-height:360px; object-fit:contain; border:1px solid #ead7e2; border-radius:12px; background:#fff; }
+.payment-screenshot-remove { margin-top:.5rem; border:0; background:transparent; color:#9b315f; text-decoration:underline; padding:.4rem .6rem; cursor:pointer; min-height:40px; }
+.payment-share-help { font-size:.84rem; color:#5c3850; overflow-wrap:anywhere; }
+@media (max-width: 480px) {
+  .upi-payment-panel { padding:.8rem; }
+  #paymentScreenshot { font-size:.82rem; }
+  .payment-screenshot-preview-wrap { max-width:100%; }
+}
