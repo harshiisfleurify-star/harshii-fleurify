@@ -1338,6 +1338,10 @@ button, .btn, .product-order-btn, .product-cart-btn { touch-action: manipulation
   .cart-sidebar {
     width: min(100%, 460px) !important;
     max-width: 100vw;
+    /* Keep the drawer off-screen until the user taps the cart icon. */
+    right: -100%;
+  }
+  .cart-sidebar.open {
     right: 0;
   }
   .cart-footer {
