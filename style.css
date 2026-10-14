@@ -1483,7 +1483,12 @@ body.preview-open { overflow:hidden; }
 
 /* Payment screenshot upload: responsive on phones, tablets and desktop. */
 .payment-upload-label { display:block; text-align:left; font-size:.9rem; font-weight:700; margin-top:.9rem; color:var(--color-text, #302333); }
-#paymentScreenshot { display:block; width:100%; max-width:100%; box-sizing:border-box; margin-top:.45rem; padding:.65rem; border:1px dashed #d7a7c1; border-radius:12px; background:#fff; font-size:.88rem; }
+#paymentScreenshotCamera, #paymentScreenshotGallery { display:none !important; }
+.payment-file-input-hidden { position:absolute !important; width:1px !important; height:1px !important; opacity:0 !important; overflow:hidden !important; pointer-events:none !important; }
+.payment-source-buttons { display:flex; flex-wrap:wrap; gap:.65rem; margin-top:.5rem; }
+.payment-source-button { flex:1 1 180px; min-height:48px; border:1px solid #e6bfd2; border-radius:12px; padding:.75rem .9rem; background:#fff7fb; color:var(--color-text, #302333); font:inherit; font-size:.92rem; font-weight:700; cursor:pointer; touch-action:manipulation; }
+.payment-source-button:focus-visible { outline:3px solid #d98bb4; outline-offset:2px; }
+.payment-source-button:active { transform:scale(.99); }
 .payment-screenshot-preview-wrap { margin:.75rem auto; max-width:360px; }
 .payment-screenshot-preview-wrap[hidden] { display:none !important; }
 .payment-screenshot-preview { display:block; width:100%; max-height:360px; object-fit:contain; border:1px solid #ead7e2; border-radius:12px; background:#fff; }
@@ -1491,6 +1496,7 @@ body.preview-open { overflow:hidden; }
 .payment-share-help { font-size:.84rem; color:#5c3850; overflow-wrap:anywhere; }
 @media (max-width: 480px) {
   .upi-payment-panel { padding:.8rem; }
-  #paymentScreenshot { font-size:.82rem; }
+  .payment-source-buttons { flex-direction:column; }
+  .payment-source-button { width:100%; flex-basis:auto; }
   .payment-screenshot-preview-wrap { max-width:100%; }
 }
