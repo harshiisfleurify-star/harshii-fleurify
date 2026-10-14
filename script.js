@@ -13,6 +13,53 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
 });
 
+// Payment screenshot preview (works on touch and desktop devices).
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('paymentScreenshot');
+  if (input) input.addEventListener('change', previewPaymentScreenshot);
+});
+
+function previewPaymentScreenshot() {
+  const input = document.getElementById('paymentScreenshot');
+  const file = input && input.files && input.files[0];
+  const wrap = document.getElementById('paymentScreenshotPreviewWrap');
+  const img = document.getElementById('paymentScreenshotPreview');
+  const help = document.getElementById('paymentShareHelp');
+  if (!file) {
+    if (wrap) wrap.hidden = true;
+    if (img) img.removeAttribute('src');
+    return;
+  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    input.value = '';
+    alert('Please upload a JPG, PNG or WebP screenshot.');
+    if (wrap) wrap.hidden = true;
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    input.value = '';
+    alert('Screenshot must be smaller than 8 MB.');
+    if (wrap) wrap.hidden = true;
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => { if (img) img.src = reader.result; if (wrap) wrap.hidden = false; };
+  reader.readAsDataURL(file);
+  if (help) help.textContent = 'Screenshot attached: ' + file.name;
+}
+
+function clearPaymentScreenshot() {
+  const input = document.getElementById('paymentScreenshot');
+  const wrap = document.getElementById('paymentScreenshotPreviewWrap');
+  const img = document.getElementById('paymentScreenshotPreview');
+  const help = document.getElementById('paymentShareHelp');
+  if (input) input.value = '';
+  if (img) img.removeAttribute('src');
+  if (wrap) wrap.hidden = true;
+  if (help) help.textContent = '';
+}
+
+
 // ===== NAVBAR =====
 function initNavbar() {
   const navbar = document.getElementById('navbar');
@@ -448,10 +495,12 @@ async function placeOrder() {
     return;
   }
 
+  let paymentScreenshot = null;
   if (selectedPayment === 'Online UPI') {
-    const utr = document.getElementById('upiReference').value.trim();
-    if (!utr) {
-      alert('Please scan the QR, complete the UPI payment, then enter the transaction reference / UTR.');
+    paymentScreenshot = document.getElementById('paymentScreenshot')?.files?.[0] || null;
+    if (!paymentScreenshot) {
+      alert('Please attach a screenshot of your successful payment before confirming the order.');
+      document.getElementById('paymentScreenshot')?.focus();
       return;
     }
   }
@@ -477,41 +526,63 @@ async function placeOrder() {
     return;
   }
 
-  // Build WhatsApp message
-  let msg = '';
-  msg += '------------------------------------%0A';
-  msg += '*NEW ORDER - Harshii\'s Fleurify*%0A';
-  msg += '------------------------------------%0A%0A';
-
-  msg += '*Order Details:*%0A';
+  // Build a plain-text receipt first, then URL-encode it safely for WhatsApp.
+  let receipt = 'NEW ORDER - Harshii\'s Fleurify\n\n';
+  receipt += 'ORDER DETAILS\n';
   cart.forEach((item, i) => {
-    msg += (i + 1) + '. ' + item.name + ' x' + item.qty + ' = \u20B9' + (item.price * item.qty).toLocaleString('en-IN') + '%0A';
+    receipt += (i + 1) + '. ' + item.name + ' x' + item.qty + ' = ₹' + (item.price * item.qty).toLocaleString('en-IN') + '\n';
   });
 
   const deliveryCharge = 50;
   const subtotal = getCartTotal();
   const total = subtotal + deliveryCharge;
-
-  msg += '%0A*Subtotal:* \u20B9' + subtotal.toLocaleString('en-IN');
-  msg += '%0A*Delivery:* \u20B9' + deliveryCharge;
-  msg += '%0A*TOTAL:* \u20B9' + total.toLocaleString('en-IN');
-  msg += '%0A%0A------------------------------------%0A';
-  msg += '*Customer Details:*%0A';
-  msg += 'Name: ' + name + '%0A';
-  msg += 'Phone: ' + phone + '%0A';
-  msg += 'Address: ' + address + '%0A';
-  msg += '%0A*Payment:* ' + selectedPayment;
+  receipt += '\nSubtotal: ₹' + subtotal.toLocaleString('en-IN');
+  receipt += '\nDelivery: ₹' + deliveryCharge;
+  receipt += '\nTOTAL: ₹' + total.toLocaleString('en-IN');
+  receipt += '\n\nCUSTOMER DETAILS';
+  receipt += '\nName: ' + name;
+  receipt += '\nPhone: ' + phone;
+  receipt += '\nAddress: ' + address;
+  receipt += '\n\nPayment: ' + selectedPayment;
   if (selectedPayment === 'Online UPI') {
-    msg += '%0A*UPI Reference/UTR:* ' + encodeURIComponent(document.getElementById('upiReference').value.trim());
-    msg += '%0A*Payment Status:* Pending owner verification';
+    const utr = document.getElementById('upiReference').value.trim();
+    if (utr) receipt += '\nUPI Reference/UTR: ' + utr;
+    receipt += '\nPayment Status: Screenshot provided — pending owner verification';
+    receipt += '\nPlease verify payment manually before confirming the order.';
   }
-  msg += '%0A------------------------------------%0A';
-  msg += '%0APlease confirm my order. Thank you!';
+  receipt += '\n\nPlease confirm my order. Thank you!';
+  const url = 'https://wa.me/919509307773?text=' + encodeURIComponent(receipt);
 
-  const url = 'https://wa.me/919509307773?text=' + msg;
-  window.open(url, '_blank');
+  // On browsers that support sharing files, let the customer share the screenshot and
+  // receipt text, then choose the owner's WhatsApp contact. WhatsApp click-to-chat
+  // itself cannot pre-attach a local file, so fall back to a prefilled chat + clear prompt.
+  if (selectedPayment === 'Online UPI' && paymentScreenshot && navigator.share && navigator.canShare) {
+    const shareData = { title: 'Harshii’s Fleurify order receipt', text: receipt, files: [paymentScreenshot] };
+    if (navigator.canShare({ files: [paymentScreenshot] })) {
+      try {
+        await navigator.share(shareData);
+        const help = document.getElementById('paymentShareHelp');
+        if (help) help.textContent = 'Share sheet opened. Choose WhatsApp, then select the shop owner and send the receipt + screenshot.';
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        window.open(url, '_blank', 'noopener');
+        alert('WhatsApp receipt opened. Please attach your selected payment screenshot in that chat before sending.');
+        return;
+      }
+    } else {
+      window.open(url, '_blank', 'noopener');
+      alert('WhatsApp receipt opened. Please attach your selected payment screenshot in that chat before sending.');
+      return;
+    }
+  } else {
+    window.open(url, '_blank', 'noopener');
+    if (selectedPayment === 'Online UPI') {
+      alert('WhatsApp receipt opened. Please attach your selected payment screenshot in that chat before sending.');
+      return;
+    }
+  }
 
-  // Clear cart
+  // Clear cart after the customer has proceeded to share/send the order.
   cart = [];
   saveCart();
   updateCartUI();
