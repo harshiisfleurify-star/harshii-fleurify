@@ -138,7 +138,7 @@ async function renderProducts(filterCategory) {
 
     // Cart button click
     card.querySelector('.product-cart-btn').addEventListener('click', function() {
-      addToCart(p.name, p.price, p.image, this);
+      addToCart(p.name, p.price, p.image, this, p.id);
     });
 
     // Wishlist button
@@ -210,12 +210,12 @@ function scrollToProducts(category) {
 }
 
 // ===== CART SYSTEM =====
-function addToCart(name, price, image, btnEl) {
-  const existing = cart.find(item => item.name === name);
+function addToCart(name, price, image, btnEl, productId) {
+  const existing = cart.find(item => (productId && item.id === productId) || (!productId && item.name === name));
   if (existing) {
     existing.qty += 1;
   } else {
-    cart.push({ name, price, image, qty: 1 });
+    cart.push({ id: productId || null, name, price, image, qty: 1 });
   }
   saveCart();
   updateCartUI();
@@ -245,6 +245,7 @@ function removeFromCart(index) {
 }
 
 function updateQty(index, delta) {
+  if (!cart[index]) return;
   cart[index].qty += delta;
   if (cart[index].qty <= 0) cart.splice(index, 1);
   saveCart();
@@ -303,7 +304,34 @@ function renderCartItems() {
   updateCartUI();
 }
 
-function toggleCart() {
+async function syncCartWithProducts() {
+  // Keep the cart in sync with the current product catalogue.
+  // If the catalogue request fails, keep the cart rather than deleting items blindly.
+  try {
+    const products = await ProductStore.getAll();
+    const byId = new Map(products.map(p => [String(p.id), p]));
+    const byName = new Map(products.map(p => [p.name, p]));
+    const removed = [];
+    cart = cart.filter(item => {
+      const live = item.id ? byId.get(String(item.id)) : byName.get(item.name);
+      if (!live || live.available === false || live.available === 'false') {
+        removed.push(item.name);
+        return false;
+      }
+      item.id = live.id;
+      item.name = live.name;
+      item.price = Number(live.price);
+      item.image = live.image;
+      return true;
+    });
+    saveCart();
+    if (removed.length) alert('Cart updated: unavailable/removed products were taken out: ' + removed.join(', '));
+  } catch (error) {
+    console.warn('Could not refresh product availability; keeping cart unchanged.', error);
+  }
+}
+
+async function toggleCart() {
   const overlay = document.getElementById('cartOverlay');
   const sidebar = document.getElementById('cartSidebar');
   const isOpen = sidebar.classList.contains('open');
@@ -312,12 +340,13 @@ function toggleCart() {
     sidebar.classList.remove('open');
     document.body.style.overflow = '';
   } else {
+    await syncCartWithProducts();
     renderCartItems();
     overlay.classList.add('open');
     sidebar.classList.add('open');
     document.body.style.overflow = 'hidden';
-    // Reset checkout form
-    document.getElementById('checkoutForm').classList.remove('show');
+    const checkout = document.getElementById('checkoutForm');
+    if (checkout) checkout.classList.remove('show');
   }
 }
 
@@ -329,10 +358,12 @@ function selectPayment(el, method) {
   selectedPayment = method;
   document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
+  const panel = document.getElementById('upiPaymentPanel');
+  if (panel) panel.hidden = method !== 'Online UPI';
 }
 
 // ===== PLACE ORDER VIA WHATSAPP =====
-function placeOrder() {
+async function placeOrder() {
   const name = document.getElementById('custName').value.trim();
   const phone = document.getElementById('custPhone').value.trim();
   const address = document.getElementById('custAddress').value.trim();
@@ -344,6 +375,35 @@ function placeOrder() {
 
   if (cart.length === 0) {
     alert('Your cart is empty!');
+    return;
+  }
+
+  if (selectedPayment === 'Online UPI') {
+    const utr = document.getElementById('upiReference').value.trim();
+    if (!utr) {
+      alert('Please scan the QR, complete the UPI payment, then enter the transaction reference / UTR.');
+      return;
+    }
+  }
+
+  // Refresh availability immediately before submitting the order.
+  // Do not submit items which were removed or marked unavailable after being added to cart.
+  try {
+    const liveProducts = await ProductStore.getAll();
+    const byId = new Map(liveProducts.map(p => [String(p.id), p]));
+    const byName = new Map(liveProducts.map(p => [p.name, p]));
+    const invalid = cart.filter(item => {
+      const p = item.id ? byId.get(String(item.id)) : byName.get(item.name);
+      return !p || p.available === false || p.available === 'false';
+    });
+    if (invalid.length) {
+      await syncCartWithProducts();
+      renderCartItems();
+      alert('Some products are no longer available and were removed from your cart. Please review your cart.');
+      return;
+    }
+  } catch (error) {
+    alert('Could not verify product availability. Please try again in a moment.');
     return;
   }
 
@@ -371,6 +431,10 @@ function placeOrder() {
   msg += 'Phone: ' + phone + '%0A';
   msg += 'Address: ' + address + '%0A';
   msg += '%0A*Payment:* ' + selectedPayment;
+  if (selectedPayment === 'Online UPI') {
+    msg += '%0A*UPI Reference/UTR:* ' + encodeURIComponent(document.getElementById('upiReference').value.trim());
+    msg += '%0A*Payment Status:* Pending owner verification';
+  }
   msg += '%0A------------------------------------%0A';
   msg += '%0APlease confirm my order. Thank you!';
 
