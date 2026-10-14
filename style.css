@@ -1443,3 +1443,39 @@ button, .btn, .product-order-btn, .product-cart-btn { touch-action: manipulation
     padding: 1rem 1rem max(1rem, env(safe-area-inset-bottom));
   }
 }
+
+
+/* ===== Checkout action stays visible on desktop and mobile ===== */
+#checkoutForm { padding-bottom: 5.25rem; }
+#checkoutForm > .btn-whatsapp {
+  position: sticky;
+  bottom: 0.5rem;
+  z-index: 5;
+  flex-shrink: 0;
+  box-shadow: 0 -8px 18px rgba(255,255,255,.92), 0 8px 24px rgba(214,51,132,.18);
+  min-height: 52px;
+}
+.upi-app-button { display:block; margin: .75rem auto; width:100%; box-sizing:border-box; }
+.upi-app-button[hidden] { display:none !important; }
+
+/* ===== Product tap-to-preview modal ===== */
+.product-preview-modal { position:fixed; inset:0; z-index:5000; display:none; align-items:center; justify-content:center; padding:18px; }
+.product-preview-modal.open { display:flex; }
+.product-preview-backdrop { position:absolute; inset:0; background:rgba(26,18,28,.68); backdrop-filter:blur(5px); }
+.product-preview-dialog { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:22px; width:min(860px,100%); max-height:90vh; overflow:auto; background:#fff; border-radius:22px; padding:22px; box-shadow:0 24px 80px rgba(0,0,0,.28); }
+.product-preview-dialog > img { width:100%; max-height:70vh; object-fit:contain; background:#fff8fc; border-radius:14px; }
+.product-preview-details { display:flex; flex-direction:column; align-items:flex-start; gap:12px; padding:12px 8px 12px 0; }
+.product-preview-details h3 { margin:0; color:var(--color-text); font-family:var(--font-heading); font-size:1.5rem; }
+.product-preview-details p { line-height:1.6; }
+.product-preview-details strong { color:var(--color-magenta); font-size:1.25rem; }
+.product-preview-details .btn { margin-top:auto; }
+.product-preview-close { position:absolute; right:12px; top:12px; z-index:2; width:40px; height:40px; border:0; border-radius:50%; background:#fff0f7; font-size:28px; cursor:pointer; }
+body.preview-open { overflow:hidden; }
+@media (max-width:600px) {
+  .product-preview-modal { padding:10px; }
+  .product-preview-dialog { grid-template-columns:1fr; gap:12px; padding:14px; max-height:92dvh; }
+  .product-preview-dialog > img { max-height:48vh; }
+  .product-preview-details { padding:4px 2px 8px; }
+  .product-preview-details h3 { font-size:1.25rem; padding-right:36px; }
+  #checkoutForm > .btn-whatsapp { bottom: .25rem; }
+}
