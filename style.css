@@ -1338,16 +1338,10 @@ button, .btn, .product-order-btn, .product-cart-btn { touch-action: manipulation
   .cart-sidebar {
     width: min(100%, 460px) !important;
     max-width: 100vw;
-    /* Keep the cart hidden on mobile until the user taps the cart icon. */
-    right: -100%;
-  }
-  .cart-sidebar.open {
     right: 0;
   }
   .cart-footer {
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
+    position: relative;
     background: #fff;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
@@ -1393,3 +1387,55 @@ button, .btn, .product-order-btn, .product-cart-btn { touch-action: manipulation
 }
 .upi-payment-panel label { display:block; text-align:left; font-size:0.85rem; font-weight:700; margin-top:0.75rem; }
 .upi-payment-panel input { width:100%; box-sizing:border-box; }
+
+
+/* ===== UPI checkout visibility fix (desktop + mobile) ===== */
+.cart-sidebar {
+  overflow: hidden;
+  min-height: 0;
+}
+.cart-header {
+  flex: 0 0 auto;
+}
+.cart-items {
+  flex: 0 0 auto;
+  max-height: 22vh;
+  overflow-y: auto;
+  min-height: 0;
+}
+.cart-footer {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: calc(100vh - 76px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+}
+.upi-payment-panel {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.upi-payment-qr {
+  width: min(100%, 280px);
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+@media (max-width: 768px) {
+  .cart-sidebar.open {
+    height: 100dvh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .cart-items { max-height: 18vh; }
+  .cart-footer {
+    flex: 1 1 0;
+    max-height: none;
+    overflow-y: auto;
+    padding: 1rem 1rem max(1rem, env(safe-area-inset-bottom));
+  }
+}
