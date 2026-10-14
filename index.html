@@ -105,8 +105,13 @@
           <img src="images/payment-qr.jpg" alt="Harshii's Fleurify UPI payment QR code" class="upi-payment-qr">
           <label for="upiReference">UPI transaction reference / UTR (optional)</label>
           <input type="text" id="upiReference" placeholder="Enter UTR if available">
-          <label for="paymentScreenshot" class="payment-upload-label">Attach payment screenshot *</label>
-          <input type="file" id="paymentScreenshot" accept="image/png,image/jpeg,image/webp" capture="environment">
+          <label class="payment-upload-label">Attach payment screenshot *</label>
+          <div class="payment-source-buttons">
+            <button type="button" class="payment-source-button" onclick="document.getElementById('paymentScreenshotCamera').click()">📷 Take photo</button>
+            <button type="button" class="payment-source-button" onclick="document.getElementById('paymentScreenshotGallery').click()">🖼️ Choose from gallery / files</button>
+          </div>
+          <input type="file" id="paymentScreenshotCamera" class="payment-file-input-hidden" accept="image/*" capture="environment" aria-label="Take a payment screenshot photo">
+          <input type="file" id="paymentScreenshotGallery" class="payment-file-input-hidden" accept="image/jpeg,image/png,image/webp" aria-label="Choose payment screenshot from gallery or files">
           <div id="paymentScreenshotPreviewWrap" class="payment-screenshot-preview-wrap" hidden>
             <img id="paymentScreenshotPreview" class="payment-screenshot-preview" alt="Payment screenshot preview">
             <button type="button" class="payment-screenshot-remove" onclick="clearPaymentScreenshot()">Remove screenshot</button>
