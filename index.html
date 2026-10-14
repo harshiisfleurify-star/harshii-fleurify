@@ -82,6 +82,15 @@
           </div>
         </div>
 
+        <div id="upiPaymentPanel" class="upi-payment-panel" hidden>
+          <h4>Pay with UPI</h4>
+          <p>Scan this QR code using Google Pay, PhonePe or Paytm. Pay the total shown above, then enter your UPI transaction reference (UTR) below.</p>
+          <img src="images/payment-qr.jpg" alt="Harshii's Fleurify UPI payment QR code" class="upi-payment-qr">
+          <label for="upiReference">UPI transaction reference / UTR</label>
+          <input type="text" id="upiReference" placeholder="Enter UTR after payment">
+          <small>Your order will remain payment-pending until the owner confirms receipt.</small>
+        </div>
+
         <button class="btn btn-whatsapp" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="placeOrder()">
           &#x1F4AC; Place Order via WhatsApp
         </button>
@@ -98,10 +107,6 @@
     <div class="floating-petals" id="floatingPetals"></div>
     <div class="container">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="badge-dot"></span>
-          Handmade with Love in Udaipur
-        </div>
         <p class="hero-script">Bouquets &amp; Gift Items</p>
         <h1>Beautiful <span class="highlight">Handmade Bouquets</span> Delivered Across Udaipur</h1>
         <p class="hero-desc">
