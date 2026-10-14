@@ -136,6 +136,15 @@ async function renderProducts(filterCategory) {
         '</div>' +
       '</div>';
 
+    // Tap/click product image or title to open a larger preview.
+    const openPreview = () => showProductPreview(p);
+    const previewImage = card.querySelector('.product-image-wrapper img');
+    const previewTitle = card.querySelector('.product-name');
+    previewImage.style.cursor = 'zoom-in';
+    previewTitle.style.cursor = 'pointer';
+    previewImage.addEventListener('click', openPreview);
+    previewTitle.addEventListener('click', openPreview);
+
     // Cart button click
     card.querySelector('.product-cart-btn').addEventListener('click', function() {
       addToCart(p.name, p.price, p.image, this, p.id);
@@ -158,6 +167,44 @@ async function renderProducts(filterCategory) {
     grid.appendChild(card);
   });
 }
+
+// ===== PRODUCT PREVIEW MODAL =====
+let previewProduct = null;
+function showProductPreview(product) {
+  previewProduct = product;
+  const modal = document.getElementById('productPreviewModal');
+  if (!modal) return;
+  document.getElementById('productPreviewImage').src = product.image || '';
+  document.getElementById('productPreviewImage').alt = product.name || 'Product preview';
+  document.getElementById('productPreviewTitle').textContent = product.name || '';
+  document.getElementById('productPreviewCategory').textContent = CATEGORY_LABELS[product.category] || product.category || '';
+  document.getElementById('productPreviewDescription').textContent = product.description || '';
+  document.getElementById('productPreviewPrice').textContent = '₹' + Number(product.price || 0).toLocaleString('en-IN');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('preview-open');
+}
+function closeProductPreview() {
+  const modal = document.getElementById('productPreviewModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('preview-open');
+}
+document.addEventListener('click', function(event) {
+  if (event.target.closest('[data-preview-close]')) closeProductPreview();
+});
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') closeProductPreview();
+});
+document.addEventListener('DOMContentLoaded', function() {
+  const addButton = document.getElementById('productPreviewAdd');
+  if (addButton) addButton.addEventListener('click', function() {
+    if (!previewProduct) return;
+    addToCart(previewProduct.name, previewProduct.price, previewProduct.image, null, previewProduct.id);
+    closeProductPreview();
+  });
+});
 
 // ===== PRODUCT FILTER =====
 function initProductFilter() {
@@ -207,6 +254,28 @@ function scrollToProducts(category) {
       if (btn.getAttribute('data-filter') === category) btn.click();
     });
   }, 800);
+}
+
+// Optional: set the shop's verified UPI ID here to enable direct UPI-app launch.
+// Example format: "shopname@bank". Do not put a phone number here unless it is the actual UPI ID.
+const FLEURIFY_UPI_ID = '';
+function updateUpiAppLink() {
+  const link = document.getElementById('openUpiApp');
+  if (!link) return;
+  if (!FLEURIFY_UPI_ID || !FLEURIFY_UPI_ID.includes('@')) {
+    link.hidden = true;
+    return;
+  }
+  const total = getCartTotal() + 50;
+  const params = new URLSearchParams({
+    pa: FLEURIFY_UPI_ID,
+    pn: "Harshii's Fleurify",
+    am: total.toFixed(2),
+    cu: 'INR',
+    tn: 'Harshii Fleurify order'
+  });
+  link.href = 'upi://pay?' + params.toString();
+  link.hidden = false;
 }
 
 // ===== CART SYSTEM =====
@@ -360,6 +429,7 @@ function selectPayment(el, method) {
   el.classList.add('selected');
   const panel = document.getElementById('upiPaymentPanel');
   if (panel) panel.hidden = method !== 'Online UPI';
+  updateUpiAppLink();
 }
 
 // ===== PLACE ORDER VIA WHATSAPP =====
