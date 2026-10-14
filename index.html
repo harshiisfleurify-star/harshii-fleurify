@@ -100,12 +100,19 @@
 
         <div id="upiPaymentPanel" class="upi-payment-panel" hidden>
           <h4>Pay with UPI</h4>
-          <p>Pay the exact order total using the QR code or your UPI app. After payment, enter the UTR below. The site cannot verify a bank payment from a QR/UTR alone; the owner must verify it unless a payment gateway is connected.</p>
+          <p>Pay the exact order total using the QR code or your UPI app, then attach a screenshot of the successful payment. The owner will verify the payment manually before confirming your order.</p>
           <a href="#" id="openUpiApp" class="btn btn-secondary upi-app-button" hidden>Open UPI app</a>
           <img src="images/payment-qr.jpg" alt="Harshii's Fleurify UPI payment QR code" class="upi-payment-qr">
-          <label for="upiReference">UPI transaction reference / UTR</label>
-          <input type="text" id="upiReference" placeholder="Enter UTR after payment">
-          <small>Your order will remain payment-pending until the owner confirms receipt.</small>
+          <label for="upiReference">UPI transaction reference / UTR (optional)</label>
+          <input type="text" id="upiReference" placeholder="Enter UTR if available">
+          <label for="paymentScreenshot" class="payment-upload-label">Attach payment screenshot *</label>
+          <input type="file" id="paymentScreenshot" accept="image/png,image/jpeg,image/webp" capture="environment">
+          <div id="paymentScreenshotPreviewWrap" class="payment-screenshot-preview-wrap" hidden>
+            <img id="paymentScreenshotPreview" class="payment-screenshot-preview" alt="Payment screenshot preview">
+            <button type="button" class="payment-screenshot-remove" onclick="clearPaymentScreenshot()">Remove screenshot</button>
+          </div>
+          <small>JPG, PNG or WebP image. Screenshot is shared with the order through your device's share sheet where supported. Otherwise, WhatsApp opens with the receipt and you'll attach the screenshot in the chat.</small>
+          <p id="paymentShareHelp" class="payment-share-help" role="status" aria-live="polite"></p>
         </div>
 
         <button class="btn btn-whatsapp" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="placeOrder()">
