@@ -7,6 +7,18 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_wJwYnSbJdODrkEqXqwr2fA_NhVnhDcB';
   const PRODUCTS_KEY = 'fleurify_products';
 
+  // Share simultaneous product requests and briefly reuse fresh results.
+  // Admin mutations invalidate this cache immediately.
+  const PRODUCTS_CACHE_MS = 5000;
+  let productsCache = null;
+  let productsCacheAt = 0;
+  let productsRequest = null;
+  function invalidateProductsCache() {
+    productsCache = null;
+    productsCacheAt = 0;
+    productsRequest = null;
+  }
+
   window.CATEGORY_LABELS = {
     bouquet: 'Bouquet',
     birthday: 'Birthday Special',
@@ -121,14 +133,34 @@
     return data.session;
   }
 
-  async function getAll() {
-    const { data, error } = await db
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+  async function getAll(options = {}) {
+    const forceRefresh = options && options.forceRefresh === true;
+    const now = Date.now();
 
-    if (error) throw error;
-    return data || [];
+    if (!forceRefresh && productsCache && now - productsCacheAt < PRODUCTS_CACHE_MS) {
+      return productsCache;
+    }
+    // If stats, table, and homepage request products together, share one DB request.
+    if (!forceRefresh && productsRequest) return productsRequest;
+
+    const request = (async () => {
+      const { data, error } = await db
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const rows = data || [];
+      productsCache = rows;
+      productsCacheAt = Date.now();
+      return rows;
+    })();
+
+    productsRequest = request;
+    try {
+      return await request;
+    } finally {
+      if (productsRequest === request) productsRequest = null;
+    }
   }
 
   async function getById(id) {
@@ -159,6 +191,7 @@
       .single();
 
     if (error) throw error;
+    invalidateProductsCache();
     return data;
   }
 
@@ -173,6 +206,7 @@
       .maybeSingle();
 
     if (error) throw error;
+    invalidateProductsCache();
     return data;
   }
 
@@ -185,6 +219,7 @@
       .eq('id', id);
 
     if (error) throw error;
+    invalidateProductsCache();
   }
 
   function localGet() {
@@ -203,6 +238,8 @@
   // Public API used by admin.html and the website.
   window.ProductStore = {
     getAll,
+
+    refresh() { return getAll({ forceRefresh: true }); },
 
     getById,
 
