@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/logo.png" type="image/png">
   <style>
     .all-products-page { padding: 9rem 0 5rem; min-height: 100vh; }
     .all-products-header { text-align:center; margin-bottom:2.5rem; }
@@ -79,38 +80,41 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="products-data.js"></script>
   <script>
     const grid = document.getElementById('allProductsGrid');
-    (async function loadAllProducts() {
-    let products;
-    try { products = await Promise.resolve(ProductStore.getAvailable()); }
-    catch (error) { console.error(error); grid.innerHTML = '<p style="text-align:center;color:var(--color-text-muted);">Products could not load. Please try again.</p>'; return; }
-    if (!products.length) {
-      grid.innerHTML = '<p style="text-align:center;color:var(--color-text-muted);">No products available right now.</p>';
-    } else {
-      grid.innerHTML = products.map(p => {
-        const cat = CATEGORY_LABELS[p.category] || p.category;
-        const wa = 'https://wa.me/919509307773?text=' +
-          encodeURIComponent('Hi! I want to buy ' + p.name + ' (₹' + p.price + ')');
-        const old = p.original_price > 0
-          ? '<span style="font-size:.78rem;color:var(--color-text-muted);text-decoration:line-through;margin-left:.35rem;">₹' + p.original_price.toLocaleString('en-IN') + '</span>'
-          : '';
-        return '<article class="all-product-card">' +
-          '<div class="all-product-image"><img src="' + p.image + '" alt="' + p.name + '" loading="lazy"></div>' +
-          '<div class="all-product-info">' +
-            '<div class="all-product-cat">' + cat + '</div>' +
-            '<h2 class="all-product-name">' + p.name + '</h2>' +
-            '<p class="all-product-desc">' + p.description + '</p>' +
-            '<div class="all-product-bottom">' +
-              '<div class="all-product-price">₹' + p.price.toLocaleString('en-IN') + old + '</div>' +
-              '<div class="all-product-buttons"><a class="all-buy" href="' + wa + '" target="_blank">Buy on WhatsApp →</a></div>' +
+    async function loadAllProducts() {
+      let products;
+      try { products = await Promise.resolve(ProductStore.getAvailable()); }
+      catch (error) { console.error(error); grid.innerHTML = '<p style="text-align:center;color:var(--color-text-muted);">Products could not load. Please try again.</p>'; return; }
+      if (!products.length) {
+        grid.innerHTML = '<p style="text-align:center;color:var(--color-text-muted);">No products available right now.</p>';
+      } else {
+        grid.innerHTML = products.map(p => {
+          const cat = CATEGORY_LABELS[p.category] || p.category;
+          const wa = 'https://wa.me/919509307773?text=' +
+            encodeURIComponent('Hi! I want to buy ' + p.name + ' (₹' + p.price + ')');
+          const old = p.original_price > 0
+            ? '<span style="font-size:.78rem;color:var(--color-text-muted);text-decoration:line-through;margin-left:.35rem;">₹' + p.original_price.toLocaleString('en-IN') + '</span>'
+            : '';
+          return '<article class="all-product-card">' +
+            '<div class="all-product-image"><img src="' + p.image + '" alt="' + p.name + '" loading="lazy" decoding="async"></div>' +
+            '<div class="all-product-info">' +
+              '<div class="all-product-cat">' + cat + '</div>' +
+              '<h2 class="all-product-name">' + p.name + '</h2>' +
+              '<p class="all-product-desc">' + p.description + '</p>' +
+              '<div class="all-product-bottom">' +
+                '<div class="all-product-price">₹' + p.price.toLocaleString('en-IN') + old + '</div>' +
+                '<div class="all-product-buttons"><a class="all-buy" href="' + wa + '" target="_blank">Buy on WhatsApp →</a></div>' +
+              '</div>' +
             '</div>' +
-          '</div>' +
-        '</article>';
-      }).join('');
+          '</article>';
+        }).join('');
+      }
     }
-    })();
+    loadAllProducts();
+    window.addEventListener('fleurify:products-updated', loadAllProducts);
   </script>
 </body>
 </html>
