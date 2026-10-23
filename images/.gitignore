@@ -1,15 +1,1 @@
-# OS & Editor
-.DS_Store
-Thumbs.db
-*.swp
-*.bak
-.vscode/
-.idea/
 
-# Backups
-backup-products-before-optimization.json
-images/logo-original.png
-
-# Logs & scratch
-*.log
-scratch/
