@@ -9,14 +9,34 @@
 
   // Share simultaneous product requests and briefly reuse fresh results.
   // Admin mutations invalidate this cache immediately.
-  const PRODUCTS_CACHE_MS = 5000;
+  const PRODUCTS_CACHE_MS = 60000;
+  const LIVE_CACHE_KEY = 'fleurify_live_products_cache';
   let productsCache = null;
   let productsCacheAt = 0;
   let productsRequest = null;
+
+  function readStoredLiveProducts() {
+    try {
+      const saved = localStorage.getItem(LIVE_CACHE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function writeStoredLiveProducts(products) {
+    try {
+      localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify(products));
+    } catch (_) {}
+  }
+
   function invalidateProductsCache() {
     productsCache = null;
     productsCacheAt = 0;
     productsRequest = null;
+    try { localStorage.removeItem(LIVE_CACHE_KEY); } catch (_) {}
   }
 
   window.CATEGORY_LABELS = {
@@ -137,30 +157,56 @@
     const forceRefresh = options && options.forceRefresh === true;
     const now = Date.now();
 
+    // 1. Fresh in-memory cache check
     if (!forceRefresh && productsCache && now - productsCacheAt < PRODUCTS_CACHE_MS) {
       return productsCache;
     }
-    // If stats, table, and homepage request products together, share one DB request.
+
+    // 2. Stale-While-Revalidate: Return instant localStorage cache if available, revalidate in background
+    if (!forceRefresh && !productsCache) {
+      const localCached = readStoredLiveProducts();
+      if (localCached) {
+        productsCache = localCached;
+        productsCacheAt = now;
+        // Background revalidation so user never waits
+        revalidateInBackground();
+        return productsCache;
+      }
+    }
+
+    // 3. Share simultaneous in-flight requests
     if (!forceRefresh && productsRequest) return productsRequest;
 
-    const request = (async () => {
-      const { data, error } = await db
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      const rows = data || [];
-      productsCache = rows;
-      productsCacheAt = Date.now();
-      return rows;
-    })();
-
+    const request = fetchProductsFromDatabase();
     productsRequest = request;
     try {
       return await request;
     } finally {
       if (productsRequest === request) productsRequest = null;
     }
+  }
+
+  async function fetchProductsFromDatabase() {
+    const { data, error } = await db
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    const rows = data || [];
+    productsCache = rows;
+    productsCacheAt = Date.now();
+    writeStoredLiveProducts(rows);
+    return rows;
+  }
+
+  function revalidateInBackground() {
+    fetchProductsFromDatabase().then((freshRows) => {
+      try {
+        window.dispatchEvent(new CustomEvent('fleurify:products-updated', { detail: { products: freshRows } }));
+      } catch (_) {}
+    }).catch(err => {
+      console.warn('Background products sync note:', err && err.message);
+    });
   }
 
   async function getById(id) {
@@ -253,6 +299,7 @@
       return getAll().then(products =>
         products.filter(p =>
           p.available &&
+          p.id !== 'site_home_categories' &&
           (category === 'all' || p.category === category)
         )
       );
@@ -260,8 +307,44 @@
 
     getAvailable() {
       return getAll().then(products =>
-        products.filter(p => p.available)
+        products.filter(p => p.available && p.id !== 'site_home_categories')
       );
+    },
+
+    async getHomeCategories() {
+      try {
+        const row = await getById('site_home_categories');
+        if (row && row.description) {
+          const parsed = JSON.parse(row.description);
+          if (Array.isArray(parsed) && parsed.length === 4) {
+            localStorage.setItem('hf_home_categories', JSON.stringify(parsed));
+            return parsed;
+          }
+        }
+      } catch (_) {}
+      try {
+        const saved = JSON.parse(localStorage.getItem('hf_home_categories') || 'null');
+        if (Array.isArray(saved) && saved.length === 4) return saved;
+      } catch (_) {}
+      return [
+        { id:'bouquet', image:'images/rose-bouquet.jpg', emoji:'💐', title:'Bouquets', subtitle:'Handcrafted Designs' },
+        { id:'wedding', image:'images/wedding.jpg', emoji:'💒', title:'Special Occasions', subtitle:'Custom Packages' },
+        { id:'birthday', image:'images/birthday.jpg', emoji:'🎂', title:'Birthday Specials', subtitle:'Gift Combos' },
+        { id:'festival', image:'images/festival.jpg', emoji:'🪔', title:'Festival Specials', subtitle:'Seasonal Collection' }
+      ];
+    },
+
+    async saveHomeCategories(categories) {
+      localStorage.setItem('hf_home_categories', JSON.stringify(categories));
+      try {
+        await update('site_home_categories', {
+          description: JSON.stringify(categories),
+          created_at: Date.now()
+        });
+      } catch (err) {
+        console.warn('Could not sync categories to Supabase:', err.message);
+      }
+      return categories;
     },
 
     // Local reset only; intentionally does not delete live database products.
