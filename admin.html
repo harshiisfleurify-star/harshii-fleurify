@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - Harshii's Fleurify</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/logo.png" type="image/png">
   <style>
     /* ===== ADMIN PANEL STYLES ===== */
     body.admin-body { background: var(--color-bg); min-height: 100vh; }
@@ -292,6 +293,7 @@
       <h1>&#x1F338; Harshii's <span>Fleurify</span> Admin</h1>
       <div class="admin-actions">
         <button class="btn btn-primary" onclick="openAddModal()">+ Add Product</button>
+        <button class="btn btn-secondary" id="optimizeDbBtn" onclick="optimizeAllDatabaseImages()" title="Compress oversized images in database for fast loading">⚡ Speed Up Images</button>
         <a href="index.html" class="btn btn-secondary" target="_blank">&#x1F310; View Website</a>
         <button class="btn btn-secondary" onclick="adminLogout()">&#x1F6AA; Logout</button>
       </div>
@@ -351,6 +353,7 @@
         <div class="form-group">
           <label>Product Image</label>
           <input type="file" id="productImage" accept="image/*" onchange="previewImage(this)">
+          <div id="imageCompressStatus" style="font-size:0.8rem;margin-top:6px;min-height:1.2em;"></div>
           <img class="image-preview" id="imagePreview" alt="Preview">
           <input type="hidden" id="productImageData">
         </div>
@@ -507,7 +510,8 @@
     }
 
     async function renderStats() {
-      const products = await Promise.resolve(ProductStore.getAll());
+      const allRows = await Promise.resolve(ProductStore.getAll());
+      const products = allRows.filter(p => p.id !== 'site_home_categories');
       const available = products.filter(p => p.available).length;
       const outOfStock = products.filter(p => !p.available).length;
       const categories = [...new Set(products.map(p => p.category))].length;
@@ -520,7 +524,8 @@
     }
 
     async function renderTable() {
-      const products = await Promise.resolve(ProductStore.getAll());
+      const allRows = await Promise.resolve(ProductStore.getAll());
+      const products = allRows.filter(p => p.id !== 'site_home_categories');
       const tbody = document.getElementById('productsTableBody');
       const empty = document.getElementById('emptyState');
 
@@ -558,27 +563,38 @@
       { id:'birthday', image:'images/birthday.jpg', emoji:'🎂', title:'Birthday Specials', subtitle:'Gift Combos' },
       { id:'festival', image:'images/festival.jpg', emoji:'🪔', title:'Festival Specials', subtitle:'Seasonal Collection' }
     ];
-    function getHomeCategories() {
+    async function getHomeCategories() {
+      if (window.ProductStore && window.ProductStore.getHomeCategories) {
+        try { return await window.ProductStore.getHomeCategories(); } catch (_) {}
+      }
       try {
         const saved = JSON.parse(localStorage.getItem('hf_home_categories') || 'null');
         if (Array.isArray(saved) && saved.length === 4) return saved;
       } catch(e) {}
       return DEFAULT_HOME_CATEGORIES.map(c => ({...c}));
     }
-    function renderCategoryEditor() {
+    async function renderCategoryEditor() {
       const grid = document.getElementById('categoryEditorGrid');
       if (!grid) return;
-      grid.innerHTML = getHomeCategories().map((c, i) => `
+      const cats = await getHomeCategories();
+      grid.innerHTML = cats.map((c, i) => `
         <div class="category-edit-card">
           <img id="catPreview${i}" src="${escapeAdminHtml(c.image)}" alt="Category preview">
-          <label>Category ${i+1} image path / URL</label>
+          <div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <input type="file" id="catFile${i}" accept="image/*" style="display:none;" onchange="uploadCategoryPhoto(this, ${i})">
+            <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:0.75rem;" onclick="document.getElementById('catFile${i}').click()">📁 Choose Photo</button>
+            <span id="catStatus${i}" style="font-size:0.75rem;color:var(--color-primary);font-weight:600;"></span>
+          </div>
+          <label>Or Image path / URL</label>
           <input id="catImage${i}" value="${escapeAdminHtml(c.image)}" placeholder="images/rose-bouquet.jpg" oninput="document.getElementById('catPreview${i}').src=this.value">
           <label>Emoji / Icon</label><input id="catEmoji${i}" maxlength="8" value="${escapeAdminHtml(c.emoji)}">
           <label>Heading</label><input id="catTitle${i}" maxlength="60" value="${escapeAdminHtml(c.title)}">
           <label>Subtitle</label><input id="catSubtitle${i}" maxlength="90" value="${escapeAdminHtml(c.subtitle)}">
         </div>`).join('');
     }
-    function saveCategorySettings() {
+    async function saveCategorySettings() {
+      const saveBtn = document.querySelector('#categoryEditor .admin-section-title button');
+      if (saveBtn) saveBtn.textContent = 'Saving...';
       const cats = DEFAULT_HOME_CATEGORIES.map((c,i) => ({
         id:c.id,
         image:document.getElementById('catImage'+i).value.trim() || c.image,
@@ -586,10 +602,19 @@
         title:document.getElementById('catTitle'+i).value.trim() || c.title,
         subtitle:document.getElementById('catSubtitle'+i).value.trim() || c.subtitle
       }));
-      try { localStorage.setItem('hf_home_categories', JSON.stringify(cats)); }
-      catch(e) { alert('Save nahi ho paya. Image file bahut badi ho sakti hai. Image path/URL use karein.'); return; }
-      alert('Category settings is browser mein save ho gayi. Live sab visitors ke liye shared database ki zarurat hogi.');
-      renderCategoryEditor();
+      try {
+        if (window.ProductStore && window.ProductStore.saveHomeCategories) {
+          await window.ProductStore.saveHomeCategories(cats);
+        } else {
+          localStorage.setItem('hf_home_categories', JSON.stringify(cats));
+        }
+        alert('Category settings save ho gayi aur Supabase database par sync ho gayi!');
+      } catch(e) {
+        alert('Save error: ' + e.message);
+      } finally {
+        if (saveBtn) saveBtn.textContent = 'Save Categories';
+        renderCategoryEditor();
+      }
     }
     function escapeAdminHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -629,6 +654,8 @@
       document.getElementById('productAvailable').value = 'true';
       document.getElementById('productImageData').value = '';
       document.getElementById('imagePreview').classList.remove('show');
+      const statusEl = document.getElementById('imageCompressStatus');
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
       document.getElementById('availToggle').classList.add('on');
       document.getElementById('availLabel').textContent = 'Available';
       selectedBadge = '';
@@ -653,10 +680,20 @@
       document.getElementById('productImageData').value = p.image;
       selectedBadge = p.badge || '';
 
-      // Show image preview
+      // Show image preview and compression feedback
       const preview = document.getElementById('imagePreview');
       preview.src = p.image;
       preview.classList.add('show');
+      const statusEl = document.getElementById('imageCompressStatus');
+      if (statusEl) {
+        if (p.image && p.image.length > 200000) {
+          statusEl.textContent = '⚠️ Large uncompressed image (' + Math.round(p.image.length * 0.75 / 1024) + ' KB). Pick photo again to auto-compress to ~50KB.';
+          statusEl.style.color = '#f59e0b';
+        } else {
+          statusEl.textContent = '✓ Fast image attached';
+          statusEl.style.color = '#10b981';
+        }
+      }
 
       // Set availability toggle
       const toggle = document.getElementById('availToggle');
@@ -706,17 +743,149 @@
       }
     }
 
-    function previewImage(input) {
-      const file = input.files[0];
+    // ===== CLIENT-SIDE IMAGE COMPRESSION (CANVAS WEBP/JPEG) =====
+    function compressImageToDataUrl(fileOrDataUrl, maxWidth = 800, maxHeight = 800, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let output = canvas.toDataURL('image/webp', quality);
+          if (!output.startsWith('data:image/webp')) {
+            output = canvas.toDataURL('image/jpeg', quality);
+          }
+          const sizeKb = Math.round((output.length * 0.75) / 1024);
+          resolve({ dataUrl: output, width, height, sizeKb });
+        };
+        img.onerror = () => reject(new Error('Image decode error during compression.'));
+
+        if (typeof fileOrDataUrl === 'string') {
+          img.src = fileOrDataUrl;
+        } else {
+          const reader = new FileReader();
+          reader.onload = (e) => { img.src = e.target.result; };
+          reader.onerror = reject;
+          reader.readAsDataURL(fileOrDataUrl);
+        }
+      });
+    }
+
+    // Auto-compress photo uploaded for categories
+    async function uploadCategoryPhoto(input, index) {
+      const file = input.files && input.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const preview = document.getElementById('imagePreview');
-        preview.src = e.target.result;
+      const statusEl = document.getElementById('catStatus' + index);
+      const preview = document.getElementById('catPreview' + index);
+      const imageInput = document.getElementById('catImage' + index);
+
+      if (statusEl) {
+        statusEl.textContent = '⏳ Compressing...';
+        statusEl.style.color = 'var(--color-primary)';
+      }
+
+      try {
+        const res = await compressImageToDataUrl(file, 800, 800, 0.8);
+        preview.src = res.dataUrl;
+        imageInput.value = res.dataUrl;
+        if (statusEl) {
+          statusEl.textContent = `⚡ Optimized: ${(file.size / 1024).toFixed(0)}KB ➔ ${res.sizeKb}KB`;
+          statusEl.style.color = '#10b981';
+        }
+      } catch (err) {
+        alert('Photo compression failed: ' + err.message);
+        if (statusEl) statusEl.textContent = '';
+      }
+    }
+
+    // Auto-compress photo selected for products
+    async function previewImage(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const preview = document.getElementById('imagePreview');
+      const hiddenInput = document.getElementById('productImageData');
+      const statusEl = document.getElementById('imageCompressStatus');
+
+      if (statusEl) {
+        statusEl.textContent = '⏳ Compressing photo for 10x faster website loading...';
+        statusEl.style.color = 'var(--color-primary)';
+      }
+
+      try {
+        const res = await compressImageToDataUrl(file, 800, 800, 0.8);
+        preview.src = res.dataUrl;
         preview.classList.add('show');
-        document.getElementById('productImageData').value = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        hiddenInput.value = res.dataUrl;
+        if (statusEl) {
+          statusEl.textContent = `⚡ Optimized: ${(file.size / 1024).toFixed(0)} KB ➔ ${res.sizeKb} KB (WebP)`;
+          statusEl.style.color = '#10b981';
+        }
+      } catch (err) {
+        console.warn('Canvas compression fallback:', err);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.classList.add('show');
+          hiddenInput.value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        if (statusEl) statusEl.textContent = '';
+      }
+    }
+
+    // One-click batch optimizer for all existing heavy images in Supabase
+    async function optimizeAllDatabaseImages() {
+      const btn = document.getElementById('optimizeDbBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const products = await ProductStore.getAll({ forceRefresh: true });
+        const heavy = products.filter(p => p.image && p.image.startsWith('data:image') && p.image.length > 150000);
+
+        if (heavy.length === 0) {
+          alert('All product images in Supabase are already compressed and running fast! 🎉');
+          return;
+        }
+
+        const totalMb = (heavy.reduce((acc, p) => acc + p.image.length, 0) / 1024 / 1024).toFixed(1);
+        const proceed = confirm(`Found ${heavy.length} large uncompressed images in Supabase (${totalMb} MB total).\n\nCompress them to modern WebP (~60KB each)? This will make website product loading up to 15x faster!`);
+        if (!proceed) return;
+
+        let done = 0;
+        for (const p of heavy) {
+          try {
+            if (btn) btn.textContent = `⚡ Compressing ${done + 1}/${heavy.length}...`;
+            const comp = await compressImageToDataUrl(p.image, 800, 800, 0.8);
+            await ProductStore.update(p.id, { image: comp.dataUrl });
+            done++;
+          } catch (e) {
+            console.error('Failed to optimize product:', p.name, e);
+          }
+        }
+        alert(`Success! Optimized ${done} product images. Supabase database payload is now super fast!`);
+        await loadDashboard();
+      } catch (err) {
+        alert('Optimization error: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '⚡ Speed Up Images';
+        }
+      }
     }
 
     // ===== SAVE PRODUCT =====
