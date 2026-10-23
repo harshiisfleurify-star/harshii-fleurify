@@ -171,7 +171,7 @@ async function renderProducts(filterCategory) {
     card.setAttribute('data-category', p.category);
     card.innerHTML =
       '<div class="product-image-wrapper">' +
-        '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy">' +
+        '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy" decoding="async">' +
         badgeHTML +
         '<button class="product-wishlist" aria-label="Wishlist">\u2661</button>' +
       '</div>' +
@@ -268,6 +268,13 @@ function initProductFilter() {
       const f = btn.getAttribute('data-filter');
       renderProducts(f);
     });
+  });
+
+  // Background sync listener: refresh grid smoothly when background query updates
+  window.addEventListener('fleurify:products-updated', () => {
+    const activeBtn = document.querySelector('.filter-btn.active');
+    const f = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+    renderProducts(f);
   });
 }
 
@@ -744,9 +751,7 @@ function submitReview() {
 
 // ===== ADMIN-EDITABLE HOME CATEGORY CARDS =====
 (function applyHomeCategorySettings() {
-  function apply() {
-    let categories;
-    try { categories = JSON.parse(localStorage.getItem('hf_home_categories') || 'null'); } catch (e) {}
+  function applyCards(categories) {
     if (!Array.isArray(categories) || categories.length !== 4) return;
     const cards = document.querySelectorAll('#categories .category-card');
     if (!cards.length) return;
@@ -757,12 +762,31 @@ function submitReview() {
       const emoji = card.querySelector('.category-icon');
       const title = card.querySelector('.category-name');
       const subtitle = card.querySelector('.category-count');
-      if (img && cat.image) { img.src = cat.image; img.alt = cat.title || 'Flower category'; }
+      if (img && cat.image) {
+        img.src = cat.image;
+        img.alt = cat.title || 'Flower category';
+        img.setAttribute('loading', 'lazy');
+        img.setAttribute('decoding', 'async');
+      }
       if (emoji) emoji.textContent = cat.emoji || '';
       if (title) title.textContent = cat.title || '';
       if (subtitle) subtitle.textContent = cat.subtitle || '';
     });
   }
+
+  function apply() {
+    // 1. Instant render from local cache
+    try {
+      const local = JSON.parse(localStorage.getItem('hf_home_categories') || 'null');
+      if (Array.isArray(local) && local.length === 4) applyCards(local);
+    } catch (_) {}
+
+    // 2. Background sync from shared Supabase database
+    if (window.ProductStore && window.ProductStore.getHomeCategories) {
+      window.ProductStore.getHomeCategories().then(applyCards).catch(() => {});
+    }
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
   else apply();
 })();
